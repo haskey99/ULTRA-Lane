@@ -1,0 +1,50 @@
+workflows:
+  ios-unsigned-ipa:
+    name: iOS Unsigned IPA for Sideloadly
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      node: 20
+    scripts:
+      - name: Handle iPhone zip upload
+        script: |
+          set -e
+          ls -la
+          if ls *.zip 1> /dev/null 2>&1; then
+            echo "Found zip - unzipping for you..."
+            mkdir -p ./unzipped
+            for z in *.zip; do
+              unzip -o "$z" -d ./unzipped
+            done
+            cp ./codemagic.yaml /tmp/wrapper.yaml
+            PROJECT_DIR=$(find ./unzipped -name "package.json" -type f | head -1 | xargs dirname)
+            echo "Project dir is $PROJECT_DIR"
+            if [ -n "$PROJECT_DIR" ]; then
+              cp -R $PROJECT_DIR/* ./
+              cp -R $PROJECT_DIR/.* ./ 2>/dev/null || true
+            fi
+            cp /tmp/wrapper.yaml ./codemagic.yaml
+            ls -la
+          fi
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build web
+        script: |
+          npm run build
+      - name: Add iOS platform
+        script: |
+          npx cap add ios || true
+          npx cap sync ios
+      - name: Build unsigned IPA
+        script: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath build CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+          mkdir -p build/ipa/Payload
+          cp -r build/Build/Products/Release-iphoneos/App.app build/ipa/Payload/
+          cd build/ipa
+          zip -r -y ULTRA-LANE-unsigned.ipa Payload
+          mv ULTRA-LANE-unsigned.ipa $CM_BUILD_DIR/
+    artifacts:
+      - ULTRA-LANE-unsigned.ipa
+      - dist/**/*
