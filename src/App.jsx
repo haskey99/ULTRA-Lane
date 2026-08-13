@@ -5,10 +5,12 @@ const LANE_W = 100 / LANE_COUNT;
 const CAR_BOTTOM = 14;
 const HIT_ZONE_Y = 0.83;
 const SPEEDS = [20,30,40,50,60,70,80,90,100,110,120,130];
-const TRAVEL_TIME = 1.8;
-const SPAWN_INTERVAL = 1.2;
-function getTravelTime(){return TRAVEL_TIME;}
-function getSpawnInterval(){return SPAWN_INTERVAL;}
+const BASE_TRAVEL = 1.8;
+const MIN_TRAVEL = 0.82;
+const BASE_SPAWN = 1.2;
+const MIN_SPAWN = 0.48;
+function getTravelTime(streak){ return Math.max(MIN_TRAVEL, BASE_TRAVEL - streak*0.06); }
+function getSpawnInterval(streak){ return Math.max(MIN_SPAWN, BASE_SPAWN - streak*0.038); }
 function pickCarSpeed(ex){const pool=SPEEDS.filter(s=>s!==ex);return pool[Math.floor(Math.random()*pool.length)];}
 const HS_KEY="speedlane:highscore-v2";
 
@@ -21,37 +23,74 @@ function playWhistle(sd,sp){const c=ac();const t0=c.currentTime+sd;WHISTLE_NOTES
 function gearShift(){const DUR=0.3;try{const c=ac();const t0=c.currentTime;const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ns=c.createBufferSource();ns.buffer=buf;const bp=c.createBiquadFilter();bp.type="bandpass";bp.Q.value=1;bp.frequency.setValueAtTime(900,t0);bp.frequency.linearRampToValueAtTime(3200,t0+DUR);const ng=c.createGain();ng.gain.setValueAtTime(0.0001,t0);ng.gain.linearRampToValueAtTime(0.7,t0+0.03);ng.gain.setValueAtTime(0.7,t0+DUR-0.05);ng.gain.linearRampToValueAtTime(0.0001,t0+DUR);ns.connect(bp);bp.connect(ng);ng.connect(c.destination);ns.start(t0);ns.stop(t0+DUR);}catch(e){}playWhistle(0.06,0.13);}
 const SFX={correct(){const DUR=0.35;try{const c=ac();const t0=c.currentTime;const V=125;const C_SOUND=343;const N=64;const bpF=new Float32Array(N);const wG=new Float32Array(N);for(let i=0;i<N;i++){const t=-DUR/2+(DUR*i)/(N-1);const d=Math.sqrt((V*t)*(V*t)+16);const vr=(V*(V*t))/d;let dop=C_SOUND/(C_SOUND-vr);dop=Math.max(0.6,Math.min(2.8,dop));bpF[i]=2800*dop;wG[i]=0.9*(4/d);}const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ws=c.createBufferSource();ws.buffer=buf;const wBP=c.createBiquadFilter();wBP.type="bandpass";wBP.Q.value=1.4;wBP.frequency.setValueCurveAtTime(bpF,t0,DUR);const wGain=c.createGain();wGain.gain.setValueCurveAtTime(wG,t0,DUR);ws.connect(wBP);wBP.connect(wGain);wGain.connect(c.destination);ws.start(t0);ws.stop(t0+DUR);const ct=t0+DUR/2;const th=c.createOscillator();th.type="sine";th.frequency.value=48;const thG=c.createGain();thG.gain.setValueAtTime(0.0001,ct);thG.gain.linearRampToValueAtTime(0.8,ct+0.005);thG.gain.exponentialRampToValueAtTime(0.0001,ct+0.12);th.connect(thG);thG.connect(c.destination);th.start(ct);th.stop(ct+0.14);}catch(e){}playWhistle(DUR/2,0.07);},wrong(){tone(180,"sawtooth",0.18,0.32);tone(120,"sawtooth",0.22,0.28,0.13);},pass(){tone(440,"sine",0.04,0.05);},gearShift(){gearShift();},speedChange(){tone(660,"sine",0.06,0.14);tone(880,"sine",0.08,0.12,0.08);},over(){try{const c=ac();const t0=c.currentTime;const fs=t0+0.8;const fd=0.7;const osc=c.createOscillator();osc.type="sine";osc.frequency.setValueAtTime(783.99,fs);osc.frequency.exponentialRampToValueAtTime(196,fs+fd);const lfo=c.createOscillator();lfo.type="sine";lfo.frequency.value=5.5;const lfoG=c.createGain();lfoG.gain.value=8;lfo.connect(lfoG);lfoG.connect(osc.frequency);const g=c.createGain();g.gain.setValueAtTime(0.0001,fs);g.gain.linearRampToValueAtTime(0.55,fs+0.03);g.gain.setValueAtTime(0.5,fs+fd*0.55);g.gain.exponentialRampToValueAtTime(0.0001,fs+fd);osc.connect(g);g.connect(c.destination);lfo.start(fs);lfo.stop(fs+fd+0.05);osc.start(fs);osc.stop(fs+fd+0.05);}catch(e){}playWhistle(0,0.22);},};
 
-// EXACT CAR FROM YOUR PHOTO - clean version
+// EXACT CAR YOU SENT - restored verbatim
 function CarSVG({lean=0}){
   return(
-    <svg width="54" height="92" viewBox="0 0 54 92" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${lean*3}deg)`,display:"block"}}>
-      {/* soft outer capsule glow like in photo */}
-      <rect x="7" y="5" width="40" height="82" rx="20" fill="#3B225A" opacity="0.42"/>
-      {/* main body teal */}
-      <path d="M13.5 10.5 Q13.5 8 18.5 8 L35.5 8 Q40.5 8 40.5 10.5 L40.5 69.5 Q40.5 76.5 35 77.5 L19 77.5 Q13.5 76.5 13.5 69.5 Z" fill="#00D0B0"/>
-      {/* wheels black */}
-      <rect x="9.5" y="17.5" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
-      <rect x="34" y="17.5" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
-      <rect x="9.5" y="51" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
-      <rect x="34" y="51" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
-      {/* pink front corners - exactly like photo */}
-      <rect x="14" y="11.2" width="5.2" height="5.2" rx="1.2" fill="#FF8ECC"/>
-      <rect x="34.8" y="11.2" width="5.2" height="5.2" rx="1.2" fill="#FF8ECC"/>
-      {/* small top dark window */}
-      <path d="M21 19 Q27 17.8 33 19 L33 23.2 Q27 24.5 21 23.2 Z" fill="#1A1A35"/>
-      {/* big windshield dark */}
-      <rect x="15.5" y="27" width="23" height="28.5" rx="8.5" fill="#22224A"/>
-      <rect x="16.5" y="28.5" width="21" height="25.5" rx="7" fill="#2B2B5E"/>
-      <rect x="31.5" y="30.5" width="2.4" height="18" rx="1.2" fill="rgba(255,255,255,0.18)"/>
-      {/* pink side markers */}
-      <rect x="12" y="47.5" width="3.2" height="5" rx="0.9" fill="#FF8ECC"/>
-      <rect x="38.8" y="47.5" width="3.2" height="5" rx="0.9" fill="#FF8ECC"/>
-      {/* yellow headlights at bottom + black bumper */}
-      <rect x="11.5" y="71" width="9.5" height="6.5" rx="1.6" fill="#FFFECC"/>
-      <rect x="32.5" y="71" width="9.5" height="6.5" rx="1.6" fill="#FFFECC"/>
-      <rect x="12.5" y="72" width="7.5" height="4.5" rx="1" fill="#FFF7A0"/>
-      <rect x="33.5" y="72" width="7.5" height="4.5" rx="1" fill="#FFF7A0"/>
-      <rect x="21.5" y="71.8" width="11" height="5" rx="1.2" fill="#1E1E1E"/>
+    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="90" viewBox="0 0 52 90" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${lean*3}deg)`,display:"block"}}>
+      <ellipse cx="26" cy="86" rx="18" ry="3.8" fill="rgba(20,10,50,0.35)" />
+      <path d="M8 18 Q8 10 15 9 L37 9 Q44 10 44 18 L44 73 Q44 80 37 82 L15 82 Q8 80 8 73 Z" fill="#00bfa5" />
+      <path d="M8 20 Q8 12 14 10 L14 78 Q8 76 8 71 Z" fill="rgba(255,255,255,0.12)" />
+      <path d="M44 20 Q44 12 38 10 L38 78 Q44 76 44 71 Z" fill="rgba(0,0,0,0.12)" />
+      <path d="M13 27 Q13 21 18 20 L34 20 Q39 21 39 27 L39 50 Q39 56 34 57 L18 57 Q13 56 13 50 Z" fill="#181233" />
+      <path d="M15 28 Q26 23 37 28 L35 48 Q26 51 17 48 Z" fill="#241b4a" />
+      <path d="M18 29 L21 28 L20 46 L17 47 Z" fill="rgba(255,255,255,0.14)" />
+      <path d="M23 27 L26 26 L25 47 L22 48 Z" fill="rgba(255,255,255,0.07)" />
+      <path d="M17 58 Q26 62 35 58 L34 65 Q26 68 18 65 Z" fill="#181233" />
+      <path d="M11 9 Q11 5 15 5 L37 5 Q41 5 41 9 L41 13 L11 13 Z" fill="#00806f" />
+      <rect x="19" y="5.5" width="14" height="5" rx="1.5" fill="#1a1a1a" />
+      <rect x="20" y="6.5" width="5" height="3" rx="0.5" fill="#2a2a2a" />
+      <rect x="27" y="6.5" width="5" height="3" rx="0.5" fill="#2a2a2a" />
+      <path d="M11 7 Q11 5 14 5 L19 5 L19 12 L11 12 Z" fill="#fffde7" />
+      <path d="M41 7 Q41 5 38 5 L33 5 L33 12 L41 12 Z" fill="#fffde7" />
+      <ellipse cx="15" cy="8.5" rx="3" ry="2.5" fill="#ffd23f" />
+      <ellipse cx="37" cy="8.5" rx="3" ry="2.5" fill="#ffd23f" />
+      <ellipse cx="15" cy="8.5" rx="4.5" ry="3.5" fill="#ffe9a3" opacity="0.4" />
+      <ellipse cx="37" cy="8.5" rx="4.5" ry="3.5" fill="#ffe9a3" opacity="0.4" />
+      <path d="M11 78 L41 78 L41 83 Q41 86 37 86 L15 86 Q11 86 11 83 Z" fill="#00806f" />
+      <path d="M11 76 L11 81 L17 81 L17 74 Z" fill="#ff5da2" />
+      <path d="M41 76 L41 81 L35 81 L35 74 Z" fill="#ff5da2" />
+      <rect x="12" y="76" width="4" height="4.5" rx="1" fill="#ffa8cf" opacity="0.9" />
+      <rect x="36" y="76" width="4" height="4.5" rx="1" fill="#ffa8cf" opacity="0.9" />
+      <rect x="14" y="83" width="6" height="3" rx="1.5" fill="#555" />
+      <rect x="32" y="83" width="6" height="3" rx="1.5" fill="#555" />
+      <g>
+        <rect x="2" y="13" width="10" height="16" rx="3" fill="#1a1a1a" />
+        <rect x="3.5" y="14.5" width="7" height="13" rx="2" fill="#252525" />
+        <ellipse cx="7" cy="21" rx="3" ry="3" fill="#333" />
+        <ellipse cx="7" cy="21" rx="1.3" ry="1.3" fill="#505050" />
+        <line x1="7" y1="18" x2="7" y2="24" stroke="#444" strokeWidth="1" />
+        <line x1="4" y1="21" x2="10" y2="21" stroke="#444" strokeWidth="1" />
+      </g>
+      <g>
+        <rect x="40" y="13" width="10" height="16" rx="3" fill="#1a1a1a" />
+        <rect x="41.5" y="14.5" width="7" height="13" rx="2" fill="#252525" />
+        <ellipse cx="45" cy="21" rx="3" ry="3" fill="#333" />
+        <ellipse cx="45" cy="21" rx="1.3" ry="1.3" fill="#505050" />
+        <line x1="45" y1="18" x2="45" y2="24" stroke="#444" strokeWidth="1" />
+        <line x1="42" y1="21" x2="48" y2="21" stroke="#444" strokeWidth="1" />
+      </g>
+      <g>
+        <rect x="2" y="60" width="10" height="16" rx="3" fill="#1a1a1a" />
+        <rect x="3.5" y="61.5" width="7" height="13" rx="2" fill="#252525" />
+        <ellipse cx="7" cy="68" rx="3" ry="3" fill="#333" />
+        <ellipse cx="7" cy="68" rx="1.3" ry="1.3" fill="#505050" />
+        <line x1="7" y1="65" x2="7" y2="71" stroke="#444" strokeWidth="1" />
+        <line x1="4" y1="68" x2="10" y2="68" stroke="#444" strokeWidth="1" />
+      </g>
+      <g>
+        <rect x="40" y="60" width="10" height="16" rx="3" fill="#1a1a1a" />
+        <rect x="41.5" y="61.5" width="7" height="13" rx="2" fill="#252525" />
+        <ellipse cx="45" cy="68" rx="3" ry="3" fill="#333" />
+        <ellipse cx="45" cy="68" rx="1.3" ry="1.3" fill="#505050" />
+        <line x1="45" y1="65" x2="45" y2="71" stroke="#444" strokeWidth="1" />
+        <line x1="42" y1="68" x2="48" y2="68" stroke="#444" strokeWidth="1" />
+      </g>
+      <path d="M19 14 Q26 12 33 14 L32 20 Q26 18 20 20 Z" fill="rgba(0,0,0,0.14)" />
+      <rect x="21" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" />
+      <rect x="27" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" />
+      <path d="M8 26 L4 28 L4 32 L8 31 Z" fill="#ff5da2" />
+      <path d="M44 26 L48 28 L48 32 L44 31 Z" fill="#ff5da2" />
+      <rect x="25" y="20" width="1.5" height="7" fill="#555" />
     </svg>
   );
 }
@@ -87,9 +126,9 @@ export default function UltraLane(){
   const scoreRef=useRef(0);
   const carLaneRef=useRef(1);
   const carSpeedRef=useRef(70);
-  const travelRef=useRef(6.0);
+  const travelRef=useRef(BASE_TRAVEL);
   const spawnTimerRef=useRef(1.5);
-  const spawnIntRef=useRef(2.2);
+  const spawnIntRef=useRef(BASE_SPAWN);
   const deadRef=useRef(false);
   const signsRef=useRef([]);
   const isDragRef=useRef(false);
@@ -125,7 +164,15 @@ export default function UltraLane(){
   const startDrag=useCallback((cx,cy)=>{if(phase!=="playing"||deadRef.current||pausedRef.current)return; if(window.innerHeight - cy < 90) return; isDragRef.current=true;gestureUsedRef.current=false;gestureStartXRef.current=cx;gestureStartYRef.current=cy;},[phase]);
   const moveDrag=useCallback((cx,cy)=>{if(!isDragRef.current||gestureUsedRef.current)return; if(window.innerHeight - cy < 70){doPause(); isDragRef.current=false; return;} const dx=cx-gestureStartXRef.current; const dy=cy-gestureStartYRef.current; if(Math.abs(dx) < STEP_PX) return; if(Math.abs(dy) > Math.abs(dx)*1.2) return; shiftToLane(carLaneRef.current+(dx>0?1:-1)); gestureUsedRef.current=true;},[STEP_PX,shiftToLane,doPause]);
   const endDrag=useCallback(()=>{if(!isDragRef.current)return;isDragRef.current=false;gestureUsedRef.current=false;setCarLean(0);},[]);
-  const spawnSign=useCallback(()=>{const isM=Math.random()<0.48;const lane=Math.floor(Math.random()*LANE_COUNT);const speed=isM?carSpeedRef.current:SPEEDS.filter(s=>s!==carSpeedRef.current)[Math.floor(Math.random()*(SPEEDS.length-1))];const s={id:signIdRef.current++,lane,speed,y:-0.08,state:null};const n=[...signsRef.current,s];signsRef.current=n;setSigns(n);},[]);
+  const spawnSign=useCallback(()=>{
+    const s = scoreRef.current;
+    const matchProb = Math.max(0.28, 0.50 - s*0.012);
+    const isM=Math.random()<matchProb;
+    const lane=Math.floor(Math.random()*LANE_COUNT);
+    const speed=isM?carSpeedRef.current:SPEEDS.filter(sp=>sp!==carSpeedRef.current)[Math.floor(Math.random()*(SPEEDS.length-1))];
+    const sign={id:signIdRef.current++,lane,speed,y:-0.08,state:null};
+    const n=[...signsRef.current,sign];signsRef.current=n;setSigns(n);
+  },[]);
 
   const tick=useCallback((ts)=>{
     if(deadRef.current||pausedRef.current)return;
@@ -144,7 +191,10 @@ export default function UltraLane(){
       const inLane=carLaneRef.current===s.lane;
       const isMatch=s.speed===carSpeedRef.current;
       if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
-        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1); const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600); travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(travelRef.current<=3.0); return{...s,y:ny,state:"correct"};}
+        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
+          const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
+          travelRef.current=getTravelTime(scoreRef.current);spawnIntRef.current=getSpawnInterval(scoreRef.current);setSpeedBlur(travelRef.current<=1.05);
+          return{...s,y:ny,state:"correct"};}
         else if(isMatch&&!inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
         else if(!isMatch&&inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
         else{SFX.pass();return{...s,y:ny,state:"passed"};}
@@ -157,7 +207,7 @@ export default function UltraLane(){
   },[spawnSign,highScore]);
 
   useEffect(()=>{if(phase==="playing"&&!paused){lastTRef.current=null;rafRef.current=requestAnimationFrame(tick);}return()=>{cancelAnimationFrame(rafRef.current);lastTRef.current=null;};},[phase,paused,tick]);
-  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=TRAVEL_TIME;spawnTimerRef.current=1.2;spawnIntRef.current=SPAWN_INTERVAL;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
+  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=BASE_TRAVEL;spawnTimerRef.current=1.2;spawnIntRef.current=BASE_SPAWN;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
 
   const signScale=y=>Math.max(0.25,Math.min(1.1,0.25+Math.max(0,y)*0.95));
   const carXPct=carLane*LANE_W+LANE_W/2;
