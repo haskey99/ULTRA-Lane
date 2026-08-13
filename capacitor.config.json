@@ -1,11 +1,11 @@
 {
   "appId": "com.haskey.ultralane",
-  "appName": "ULTRA-Lane",
+  "appName": "ULTRA Lane",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "plugins": {
     "AdMob": {
-      "appId": "ca-app-pub-9531394686837391~4072754712"
+      "appId": "ca-app-pub-95313946868373"
     }
   }
 }
