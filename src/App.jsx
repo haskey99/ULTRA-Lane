@@ -5,12 +5,11 @@ const LANE_W = 100 / LANE_COUNT;
 const CAR_BOTTOM = 14;
 const HIT_ZONE_Y = 0.83;
 const SPEEDS = [20,30,40,50,60,70,80,90,100,110,120,130];
-const BASE_TRAVEL = 1.8;
-const MIN_TRAVEL = 0.82;
-const BASE_SPAWN = 1.2;
-const MIN_SPAWN = 0.48;
-function getTravelTime(streak){ return Math.max(MIN_TRAVEL, BASE_TRAVEL - streak*0.06); }
-function getSpawnInterval(streak){ return Math.max(MIN_SPAWN, BASE_SPAWN - streak*0.038); }
+// FLAT but a little harder - no ramp
+const TRAVEL_TIME = 1.5;
+const SPAWN_INTERVAL = 1.0;
+function getTravelTime(){return TRAVEL_TIME;}
+function getSpawnInterval(){return SPAWN_INTERVAL;}
 function pickCarSpeed(ex){const pool=SPEEDS.filter(s=>s!==ex);return pool[Math.floor(Math.random()*pool.length)];}
 const HS_KEY="speedlane:highscore-v2";
 
@@ -23,10 +22,10 @@ function playWhistle(sd,sp){const c=ac();const t0=c.currentTime+sd;WHISTLE_NOTES
 function gearShift(){const DUR=0.3;try{const c=ac();const t0=c.currentTime;const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ns=c.createBufferSource();ns.buffer=buf;const bp=c.createBiquadFilter();bp.type="bandpass";bp.Q.value=1;bp.frequency.setValueAtTime(900,t0);bp.frequency.linearRampToValueAtTime(3200,t0+DUR);const ng=c.createGain();ng.gain.setValueAtTime(0.0001,t0);ng.gain.linearRampToValueAtTime(0.7,t0+0.03);ng.gain.setValueAtTime(0.7,t0+DUR-0.05);ng.gain.linearRampToValueAtTime(0.0001,t0+DUR);ns.connect(bp);bp.connect(ng);ng.connect(c.destination);ns.start(t0);ns.stop(t0+DUR);}catch(e){}playWhistle(0.06,0.13);}
 const SFX={correct(){const DUR=0.35;try{const c=ac();const t0=c.currentTime;const V=125;const C_SOUND=343;const N=64;const bpF=new Float32Array(N);const wG=new Float32Array(N);for(let i=0;i<N;i++){const t=-DUR/2+(DUR*i)/(N-1);const d=Math.sqrt((V*t)*(V*t)+16);const vr=(V*(V*t))/d;let dop=C_SOUND/(C_SOUND-vr);dop=Math.max(0.6,Math.min(2.8,dop));bpF[i]=2800*dop;wG[i]=0.9*(4/d);}const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ws=c.createBufferSource();ws.buffer=buf;const wBP=c.createBiquadFilter();wBP.type="bandpass";wBP.Q.value=1.4;wBP.frequency.setValueCurveAtTime(bpF,t0,DUR);const wGain=c.createGain();wGain.gain.setValueCurveAtTime(wG,t0,DUR);ws.connect(wBP);wBP.connect(wGain);wGain.connect(c.destination);ws.start(t0);ws.stop(t0+DUR);const ct=t0+DUR/2;const th=c.createOscillator();th.type="sine";th.frequency.value=48;const thG=c.createGain();thG.gain.setValueAtTime(0.0001,ct);thG.gain.linearRampToValueAtTime(0.8,ct+0.005);thG.gain.exponentialRampToValueAtTime(0.0001,ct+0.12);th.connect(thG);thG.connect(c.destination);th.start(ct);th.stop(ct+0.14);}catch(e){}playWhistle(DUR/2,0.07);},wrong(){tone(180,"sawtooth",0.18,0.32);tone(120,"sawtooth",0.22,0.28,0.13);},pass(){tone(440,"sine",0.04,0.05);},gearShift(){gearShift();},speedChange(){tone(660,"sine",0.06,0.14);tone(880,"sine",0.08,0.12,0.08);},over(){try{const c=ac();const t0=c.currentTime;const fs=t0+0.8;const fd=0.7;const osc=c.createOscillator();osc.type="sine";osc.frequency.setValueAtTime(783.99,fs);osc.frequency.exponentialRampToValueAtTime(196,fs+fd);const lfo=c.createOscillator();lfo.type="sine";lfo.frequency.value=5.5;const lfoG=c.createGain();lfoG.gain.value=8;lfo.connect(lfoG);lfoG.connect(osc.frequency);const g=c.createGain();g.gain.setValueAtTime(0.0001,fs);g.gain.linearRampToValueAtTime(0.55,fs+0.03);g.gain.setValueAtTime(0.5,fs+fd*0.55);g.gain.exponentialRampToValueAtTime(0.0001,fs+fd);osc.connect(g);g.connect(c.destination);lfo.start(fs);lfo.stop(fs+fd+0.05);osc.start(fs);osc.stop(fs+fd+0.05);}catch(e){}playWhistle(0,0.22);},};
 
-// EXACT CAR YOU SENT - restored verbatim
+// YOUR EXACT CAR - now flipped 180° so headlights face correct way
 function CarSVG({lean=0}){
   return(
-    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="90" viewBox="0 0 52 90" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${lean*3}deg)`,display:"block"}}>
+    <svg xmlns="http://www.w3.org/2000/svg" width="52" height="90" viewBox="0 0 52 90" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${180+lean*3}deg)`,display:"block"}}>
       <ellipse cx="26" cy="86" rx="18" ry="3.8" fill="rgba(20,10,50,0.35)" />
       <path d="M8 18 Q8 10 15 9 L37 9 Q44 10 44 18 L44 73 Q44 80 37 82 L15 82 Q8 80 8 73 Z" fill="#00bfa5" />
       <path d="M8 20 Q8 12 14 10 L14 78 Q8 76 8 71 Z" fill="rgba(255,255,255,0.12)" />
@@ -126,9 +125,9 @@ export default function UltraLane(){
   const scoreRef=useRef(0);
   const carLaneRef=useRef(1);
   const carSpeedRef=useRef(70);
-  const travelRef=useRef(BASE_TRAVEL);
+  const travelRef=useRef(TRAVEL_TIME);
   const spawnTimerRef=useRef(1.5);
-  const spawnIntRef=useRef(BASE_SPAWN);
+  const spawnIntRef=useRef(SPAWN_INTERVAL);
   const deadRef=useRef(false);
   const signsRef=useRef([]);
   const isDragRef=useRef(false);
@@ -165,9 +164,7 @@ export default function UltraLane(){
   const moveDrag=useCallback((cx,cy)=>{if(!isDragRef.current||gestureUsedRef.current)return; if(window.innerHeight - cy < 70){doPause(); isDragRef.current=false; return;} const dx=cx-gestureStartXRef.current; const dy=cy-gestureStartYRef.current; if(Math.abs(dx) < STEP_PX) return; if(Math.abs(dy) > Math.abs(dx)*1.2) return; shiftToLane(carLaneRef.current+(dx>0?1:-1)); gestureUsedRef.current=true;},[STEP_PX,shiftToLane,doPause]);
   const endDrag=useCallback(()=>{if(!isDragRef.current)return;isDragRef.current=false;gestureUsedRef.current=false;setCarLean(0);},[]);
   const spawnSign=useCallback(()=>{
-    const s = scoreRef.current;
-    const matchProb = Math.max(0.28, 0.50 - s*0.012);
-    const isM=Math.random()<matchProb;
+    const isM=Math.random()<0.45;
     const lane=Math.floor(Math.random()*LANE_COUNT);
     const speed=isM?carSpeedRef.current:SPEEDS.filter(sp=>sp!==carSpeedRef.current)[Math.floor(Math.random()*(SPEEDS.length-1))];
     const sign={id:signIdRef.current++,lane,speed,y:-0.08,state:null};
@@ -193,7 +190,7 @@ export default function UltraLane(){
       if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
         if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
           const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
-          travelRef.current=getTravelTime(scoreRef.current);spawnIntRef.current=getSpawnInterval(scoreRef.current);setSpeedBlur(travelRef.current<=1.05);
+          travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(false);
           return{...s,y:ny,state:"correct"};}
         else if(isMatch&&!inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
         else if(!isMatch&&inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
@@ -207,7 +204,7 @@ export default function UltraLane(){
   },[spawnSign,highScore]);
 
   useEffect(()=>{if(phase==="playing"&&!paused){lastTRef.current=null;rafRef.current=requestAnimationFrame(tick);}return()=>{cancelAnimationFrame(rafRef.current);lastTRef.current=null;};},[phase,paused,tick]);
-  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=BASE_TRAVEL;spawnTimerRef.current=1.2;spawnIntRef.current=BASE_SPAWN;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
+  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=TRAVEL_TIME;spawnTimerRef.current=1.2;spawnIntRef.current=SPAWN_INTERVAL;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
 
   const signScale=y=>Math.max(0.25,Math.min(1.1,0.25+Math.max(0,y)*0.95));
   const carXPct=carLane*LANE_W+LANE_W/2;
