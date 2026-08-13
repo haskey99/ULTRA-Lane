@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { initAds, onPlayerDied } from "./ads.js";
 
 const LANE_COUNT = 3;
 const LANE_W = 100 / LANE_COUNT;
@@ -50,48 +51,14 @@ function CarSVG({lean=0}){
       <rect x="36" y="76" width="4" height="4.5" rx="1" fill="#ffa8cf" opacity="0.9" />
       <rect x="14" y="83" width="6" height="3" rx="1.5" fill="#555" />
       <rect x="32" y="83" width="6" height="3" rx="1.5" fill="#555" />
-      <g>
-        <rect x="2" y="13" width="10" height="16" rx="3" fill="#1a1a1a" />
-        <rect x="3.5" y="14.5" width="7" height="13" rx="2" fill="#252525" />
-        <ellipse cx="7" cy="21" rx="3" ry="3" fill="#333" />
-        <ellipse cx="7" cy="21" rx="1.3" ry="1.3" fill="#505050" />
-        <line x1="7" y1="18" x2="7" y2="24" stroke="#444" strokeWidth="1" />
-        <line x1="4" y1="21" x2="10" y2="21" stroke="#444" strokeWidth="1" />
-      </g>
-      <g>
-        <rect x="40" y="13" width="10" height="16" rx="3" fill="#1a1a1a" />
-        <rect x="41.5" y="14.5" width="7" height="13" rx="2" fill="#252525" />
-        <ellipse cx="45" cy="21" rx="3" ry="3" fill="#333" />
-        <ellipse cx="45" cy="21" rx="1.3" ry="1.3" fill="#505050" />
-        <line x1="45" y1="18" x2="45" y2="24" stroke="#444" strokeWidth="1" />
-        <line x1="42" y1="21" x2="48" y2="21" stroke="#444" strokeWidth="1" />
-      </g>
-      <g>
-        <rect x="2" y="60" width="10" height="16" rx="3" fill="#1a1a1a" />
-        <rect x="3.5" y="61.5" width="7" height="13" rx="2" fill="#252525" />
-        <ellipse cx="7" cy="68" rx="3" ry="3" fill="#333" />
-        <ellipse cx="7" cy="68" rx="1.3" ry="1.3" fill="#505050" />
-        <line x1="7" y1="65" x2="7" y2="71" stroke="#444" strokeWidth="1" />
-        <line x1="4" y1="68" x2="10" y2="68" stroke="#444" strokeWidth="1" />
-      </g>
-      <g>
-        <rect x="40" y="60" width="10" height="16" rx="3" fill="#1a1a1a" />
-        <rect x="41.5" y="61.5" width="7" height="13" rx="2" fill="#252525" />
-        <ellipse cx="45" cy="68" rx="3" ry="3" fill="#333" />
-        <ellipse cx="45" cy="68" rx="1.3" ry="1.3" fill="#505050" />
-        <line x1="45" y1="65" x2="45" y2="71" stroke="#444" strokeWidth="1" />
-        <line x1="42" y1="68" x2="48" y2="68" stroke="#444" strokeWidth="1" />
-      </g>
-      <path d="M19 14 Q26 12 33 14 L32 20 Q26 18 20 20 Z" fill="rgba(0,0,0,0.14)" />
-      <rect x="21" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" />
-      <rect x="27" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" />
-      <path d="M8 26 L4 28 L4 32 L8 31 Z" fill="#ff5da2" />
-      <path d="M44 26 L48 28 L48 32 L44 31 Z" fill="#ff5da2" />
-      <rect x="25" y="20" width="1.5" height="7" fill="#555" />
+      <g><rect x="2" y="13" width="10" height="16" rx="3" fill="#1a1a1a" /><rect x="3.5" y="14.5" width="7" height="13" rx="2" fill="#252525" /><ellipse cx="7" cy="21" rx="3" ry="3" fill="#333" /><ellipse cx="7" cy="21" rx="1.3" ry="1.3" fill="#505050" /><line x1="7" y1="18" x2="7" y2="24" stroke="#444" strokeWidth="1" /><line x1="4" y1="21" x2="10" y2="21" stroke="#444" strokeWidth="1" /></g>
+      <g><rect x="40" y="13" width="10" height="16" rx="3" fill="#1a1a1a" /><rect x="41.5" y="14.5" width="7" height="13" rx="2" fill="#252525" /><ellipse cx="45" cy="21" rx="3" ry="3" fill="#333" /><ellipse cx="45" cy="21" rx="1.3" ry="1.3" fill="#505050" /><line x1="45" y1="18" x2="45" y2="24" stroke="#444" strokeWidth="1" /><line x1="42" y1="21" x2="48" y2="21" stroke="#444" strokeWidth="1" /></g>
+      <g><rect x="2" y="60" width="10" height="16" rx="3" fill="#1a1a1a" /><rect x="3.5" y="61.5" width="7" height="13" rx="2" fill="#252525" /><ellipse cx="7" cy="68" rx="3" ry="3" fill="#333" /><ellipse cx="7" cy="68" rx="1.3" ry="1.3" fill="#505050" /><line x1="7" y1="65" x2="7" y2="71" stroke="#444" strokeWidth="1" /><line x1="4" y1="68" x2="10" y2="68" stroke="#444" strokeWidth="1" /></g>
+      <g><rect x="40" y="60" width="10" height="16" rx="3" fill="#1a1a1a" /><rect x="41.5" y="61.5" width="7" height="13" rx="2" fill="#252525" /><ellipse cx="45" cy="68" rx="3" ry="3" fill="#333" /><ellipse cx="45" cy="68" rx="1.3" ry="1.3" fill="#505050" /><line x1="45" y1="65" x2="45" y2="71" stroke="#444" strokeWidth="1" /><line x1="42" y1="68" x2="48" y2="68" stroke="#444" strokeWidth="1" /></g>
+      <path d="M19 14 Q26 12 33 14 L32 20 Q26 18 20 20 Z" fill="rgba(0,0,0,0.14)" /><rect x="21" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" /><rect x="27" y="15" width="4.5" height="2" rx="1" fill="rgba(0,0,0,0.3)" /><path d="M8 26 L4 28 L4 32 L8 31 Z" fill="#ff5da2" /><path d="M44 26 L48 28 L48 32 L44 31 Z" fill="#ff5da2" /><rect x="25" y="20" width="1.5" height="7" fill="#555" />
     </svg>
   );
 }
-
 function SpeedSign({speed,state}){const numCol=state==="correct"?"#00c853":state==="wrong"?"#cc0000":"#111";const ringCol=state==="correct"?"#00e676":state==="wrong"?"#ff1744":"rgba(255,178,64,0.4)";const ringW=state?5:2.5;const fs=speed>=100?26:30;return(<div style={{position:"relative",width:66,height:88}}><svg width={66} height={88} viewBox="0 0 66 88" fill="none" style={{position:"absolute",inset:0}}><rect x="30.5" y="64" width="5" height="24" rx="2.5" fill="#b09ad9"/><circle cx="33" cy="33" r="32" fill="#e0245a"/><circle cx="33" cy="33" r="26" fill="#fff8f0"/><circle cx="33" cy="33" r="29" fill="none" stroke={ringCol} strokeWidth={ringW}/></svg><div style={{position:"absolute",left:0,right:0,top:"7.95%",height:"59%",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontFamily:"'Arial Black',Arial,sans-serif",fontWeight:900,fontSize:fs,lineHeight:1,color:numCol}}>{speed}</div></div></div>);}
 function Road({dashOffset,blur}){const dH=5.5,dG=7.5,tot=dH+dG;const dashes=[];for(let div=1;div<=LANE_COUNT-1;div++){const x=div*LANE_W;for(let i=-1;i<14;i++){const y=(i*tot+dashOffset)%(100+tot)-tot;dashes.push(<rect key={`${div}-${i}`} x={`${x-0.38}%`} y={`${y}%`} width="0.76%" height={`${dH}%`} fill="rgba(255,210,64,0.85)" rx="1"/>);}}return(<svg width="100%" height="100%" style={{position:"absolute",inset:0,pointerEvents:"none"}}><defs><linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2a1c5c"/><stop offset="55%" stopColor="#301f6e"/><stop offset="100%" stopColor="#180f3d"/></linearGradient>{blur&&<filter id="sb"><feGaussianBlur stdDeviation="0 2.2"/></filter>}</defs><rect width="100%" height="100%" fill="url(#road)" filter={blur?"url(#sb)":undefined}/><rect x="0" width="3" height="100%" fill="rgba(0,230,201,0.4)"/><rect x="calc(100% - 3px)" width="3" height="100%" fill="rgba(0,230,201,0.4)"/>{dashes}</svg>);}
 function Tree({x,y,s=1,v=0}){const C=["#12b88f","#ff5da2","#ffd23f","#8f6bff"];const r=16*s;return(<g transform={`translate(${x},${y})`}><ellipse cx={3*s} cy={3*s} rx={r*0.85} ry={r*0.32} fill="rgba(20,10,50,0.3)"/><rect x={-3*s} y={-15*s} width={6*s} height={15*s} rx={3*s} fill="#8a5a34"/><circle cx={0} cy={-15*s} r={r} fill={C[v%4]}/></g>);}
@@ -135,6 +102,7 @@ export default function UltraLane(){
   const [carPunch,setCarPunch]=useState(false);
 
   useEffect(()=>{try{const v=localStorage.getItem(HS_KEY);if(v){const n=parseInt(v,10);if(Number.isFinite(n))setHighScore(n);}}catch{}},[]);
+  useEffect(()=>{ initAds(); },[]);
   useEffect(()=>{carLaneRef.current=carLane;},[carLane]);
   useEffect(()=>{carSpeedRef.current=carSpeed;},[carSpeed]);
   useEffect(()=>{pausedRef.current=paused;},[paused]);
@@ -147,7 +115,7 @@ export default function UltraLane(){
     const onVis=()=>{if(document.hidden)doPause();};
     const onBlur=()=>{doPause();};
     const onPageHide=()=>{doPause();};
-    const onTouchStartWindow=(e)=>{if(phaseRef.current!=="playing"||deadRef.current)return;const t=e.touches[0]; if(!t)return; if(window.innerHeight - t.clientY < 110) doPause();};
+    const onTouchStartWindow=(e)=>{if(phaseRef.current!=="playing"||deadRef.current)return;const t=e.touches[0]; if(!t)return; if(t.clientY < 45 || window.innerHeight - t.clientY < 110) doPause();};
     document.addEventListener("visibilitychange",onVis);
     window.addEventListener("blur",onBlur);
     window.addEventListener("pagehide",onPageHide);
@@ -158,7 +126,7 @@ export default function UltraLane(){
   const resumeGame=useCallback((e)=>{if(e){e.preventDefault();e.stopPropagation();}lastTRef.current=null;pausedRef.current=false;setPaused(false);},[]);
   const STEP_PX=Math.max(20,roadW*(LANE_W/100)*0.22);
   const shiftToLane=useCallback((t)=>{const c=Math.max(0,Math.min(LANE_COUNT-1,t));if(c===carLaneRef.current)return;const d=c>carLaneRef.current?1:-1;setCarLean(d);carLaneRef.current=c;setCarLane(c);SFX.gearShift();setCarPunch(true);setTimeout(()=>setCarPunch(false),140);},[]);
-  const startDrag=useCallback((cx,cy)=>{if(phase!=="playing"||deadRef.current||pausedRef.current)return; if(window.innerHeight - cy < 90) return; isDragRef.current=true;gestureUsedRef.current=false;gestureStartXRef.current=cx;gestureStartYRef.current=cy;},[phase]);
+  const startDrag=useCallback((cx,cy)=>{if(phase!=="playing"||deadRef.current||pausedRef.current)return; if(cy < 45){ doPause(); return; } if(window.innerHeight - cy < 90) return; isDragRef.current=true;gestureUsedRef.current=false;gestureStartXRef.current=cx;gestureStartYRef.current=cy;},[phase, doPause]);
   const moveDrag=useCallback((cx,cy)=>{if(!isDragRef.current||gestureUsedRef.current)return; if(window.innerHeight - cy < 70){doPause(); isDragRef.current=false; return;} const dx=cx-gestureStartXRef.current; const dy=cy-gestureStartYRef.current; if(Math.abs(dx) < STEP_PX) return; if(Math.abs(dy) > Math.abs(dx)*1.2) return; shiftToLane(carLaneRef.current+(dx>0?1:-1)); gestureUsedRef.current=true;},[STEP_PX,shiftToLane,doPause]);
   const endDrag=useCallback(()=>{if(!isDragRef.current)return;isDragRef.current=false;gestureUsedRef.current=false;setCarLean(0);},[]);
   const spawnSign=useCallback(()=>{
@@ -197,7 +165,7 @@ export default function UltraLane(){
       return{...s,y:ny};
     }).filter(s=>s.y<1.3);
     signsRef.current=updated;setSigns(updated);
-    if(newDead&&!deadRef.current){deadRef.current=true;SFX.over(); const survived=scoreRef.current; if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);} setTimeout(()=>setPhase("result"),1800);}
+    if(newDead&&!deadRef.current){deadRef.current=true;SFX.over(); onPlayerDied(); const survived=scoreRef.current; if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);} setTimeout(()=>setPhase("result"),1800);}
     rafRef.current=requestAnimationFrame(tick);
   },[spawnSign,highScore]);
 
@@ -232,7 +200,7 @@ export default function UltraLane(){
       </div>
       <div ref={roadRef} style={{flex:1,width:"100%",maxWidth:440,position:"relative",overflow:"hidden",cursor:"pointer"}}
         onMouseDown={e=>startDrag(e.clientX,e.clientY)} onMouseMove={e=>moveDrag(e.clientX,e.clientY)} onMouseUp={endDrag} onMouseLeave={endDrag}
-        onTouchStart={e=>{if(paused)return;const t=e.touches[0]; if(!t)return; if(window.innerHeight - t.clientY < 90){doPause(); return;} e.preventDefault(); startDrag(t.clientX,t.clientY);}} onTouchMove={e=>{if(paused)return;const t=e.touches[0]; if(!t)return; e.preventDefault(); moveDrag(t.clientX,t.clientY);}} onTouchEnd={e=>{if(paused)return;e.preventDefault();endDrag();}}>
+        onTouchStart={e=>{if(paused)return;const t=e.touches[0]; if(!t)return; if(t.clientY < 45 || window.innerHeight - t.clientY < 90){doPause(); return;} e.preventDefault(); startDrag(t.clientX,t.clientY);}} onTouchMove={e=>{if(paused)return;const t=e.touches[0]; if(!t)return; e.preventDefault(); moveDrag(t.clientX,t.clientY);}} onTouchEnd={e=>{if(paused)return;e.preventDefault();endDrag();}}>
         <Road dashOffset={dashOff} blur={speedBlur}/>
         <div style={{position:"absolute",inset:0,pointerEvents:"none"}}><Scenery offset={scenOff} roadW={roadW}/></div>
         {signs.map(s=>{const cx=s.lane*LANE_W+LANE_W/2;const sc=signScale(s.y);return(<div key={s.id} style={{position:"absolute",left:`${cx}%`,top:`${s.y*100}%`,transform:`translate(-50%,-50%) scale(${sc.toFixed(3)})`,pointerEvents:"none",zIndex:10}}><SpeedSign speed={s.speed} state={s.state}/></div>);})}
