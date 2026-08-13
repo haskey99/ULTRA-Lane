@@ -15,7 +15,7 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm ci
+          npm install
           npm run build
           npx cap sync ios
           npx cap copy ios
@@ -32,5 +32,4 @@ workflows:
           cd $CM_BUILD_DIR
           zip -r ULTRA-LANE-unsigned.ipa Payload
     artifacts:
-      - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
