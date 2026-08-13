@@ -21,28 +21,40 @@ function playWhistle(sd,sp){const c=ac();const t0=c.currentTime+sd;WHISTLE_NOTES
 function gearShift(){const DUR=0.3;try{const c=ac();const t0=c.currentTime;const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ns=c.createBufferSource();ns.buffer=buf;const bp=c.createBiquadFilter();bp.type="bandpass";bp.Q.value=1;bp.frequency.setValueAtTime(900,t0);bp.frequency.linearRampToValueAtTime(3200,t0+DUR);const ng=c.createGain();ng.gain.setValueAtTime(0.0001,t0);ng.gain.linearRampToValueAtTime(0.7,t0+0.03);ng.gain.setValueAtTime(0.7,t0+DUR-0.05);ng.gain.linearRampToValueAtTime(0.0001,t0+DUR);ns.connect(bp);bp.connect(ng);ng.connect(c.destination);ns.start(t0);ns.stop(t0+DUR);}catch(e){}playWhistle(0.06,0.13);}
 const SFX={correct(){const DUR=0.35;try{const c=ac();const t0=c.currentTime;const V=125;const C_SOUND=343;const N=64;const bpF=new Float32Array(N);const wG=new Float32Array(N);for(let i=0;i<N;i++){const t=-DUR/2+(DUR*i)/(N-1);const d=Math.sqrt((V*t)*(V*t)+16);const vr=(V*(V*t))/d;let dop=C_SOUND/(C_SOUND-vr);dop=Math.max(0.6,Math.min(2.8,dop));bpF[i]=2800*dop;wG[i]=0.9*(4/d);}const n=Math.floor(c.sampleRate*DUR);const buf=c.createBuffer(1,n,c.sampleRate);const bd=buf.getChannelData(0);for(let i=0;i<n;i++)bd[i]=Math.random()*2-1;const ws=c.createBufferSource();ws.buffer=buf;const wBP=c.createBiquadFilter();wBP.type="bandpass";wBP.Q.value=1.4;wBP.frequency.setValueCurveAtTime(bpF,t0,DUR);const wGain=c.createGain();wGain.gain.setValueCurveAtTime(wG,t0,DUR);ws.connect(wBP);wBP.connect(wGain);wGain.connect(c.destination);ws.start(t0);ws.stop(t0+DUR);const ct=t0+DUR/2;const th=c.createOscillator();th.type="sine";th.frequency.value=48;const thG=c.createGain();thG.gain.setValueAtTime(0.0001,ct);thG.gain.linearRampToValueAtTime(0.8,ct+0.005);thG.gain.exponentialRampToValueAtTime(0.0001,ct+0.12);th.connect(thG);thG.connect(c.destination);th.start(ct);th.stop(ct+0.14);}catch(e){}playWhistle(DUR/2,0.07);},wrong(){tone(180,"sawtooth",0.18,0.32);tone(120,"sawtooth",0.22,0.28,0.13);},pass(){tone(440,"sine",0.04,0.05);},gearShift(){gearShift();},speedChange(){tone(660,"sine",0.06,0.14);tone(880,"sine",0.08,0.12,0.08);},over(){try{const c=ac();const t0=c.currentTime;const fs=t0+0.8;const fd=0.7;const osc=c.createOscillator();osc.type="sine";osc.frequency.setValueAtTime(783.99,fs);osc.frequency.exponentialRampToValueAtTime(196,fs+fd);const lfo=c.createOscillator();lfo.type="sine";lfo.frequency.value=5.5;const lfoG=c.createGain();lfoG.gain.value=8;lfo.connect(lfoG);lfoG.connect(osc.frequency);const g=c.createGain();g.gain.setValueAtTime(0.0001,fs);g.gain.linearRampToValueAtTime(0.55,fs+0.03);g.gain.setValueAtTime(0.5,fs+fd*0.55);g.gain.exponentialRampToValueAtTime(0.0001,fs+fd);osc.connect(g);g.connect(c.destination);lfo.start(fs);lfo.stop(fs+fd+0.05);osc.start(fs);osc.stop(fs+fd+0.05);}catch(e){}playWhistle(0,0.22);},};
 
-// CLEANER ORIGINAL CAR - no top blob, crisp edges
-function CarSVG({lean=0}){return(
-<svg width="52" height="84" viewBox="0 0 52 84" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${lean*3}deg)`,display:"block"}}>
-  <ellipse cx="26" cy="80" rx="14" ry="3.2" fill="rgba(0,0,0,0.28)"/>
-  <rect x="6" y="16" width="11" height="14" rx="4" fill="#121212"/>
-  <rect x="35" y="16" width="11" height="14" rx="4" fill="#121212"/>
-  <rect x="6" y="48" width="11" height="14" rx="4" fill="#121212"/>
-  <rect x="35" y="48" width="11" height="14" rx="4" fill="#121212"/>
-  <path d="M12 10 Q12 6 18 6 L34 6 Q40 6 40 10 L40 64 Q40 71 33.5 72 L18.5 72 Q12 71 12 64 Z" fill="#00D1B0"/>
-  <rect x="12" y="9.5" width="5.5" height="5" rx="1.2" fill="#FF8ECC"/>
-  <rect x="34.5" y="9.5" width="5.5" height="5" rx="1.2" fill="#FF8ECC"/>
-  <rect x="19.5" y="18" width="13" height="6" rx="2.5" fill="#1E1E3A"/>
-  <rect x="14" y="26" width="24" height="24" rx="7.5" fill="#1E1E40"/>
-  <rect x="16" y="28" width="20" height="20" rx="6" fill="#2A2A60"/>
-  <rect x="30" y="30" width="2.5" height="16" rx="1.2" fill="rgba(255,255,255,0.18)"/>
-  <rect x="11" y="49.5" width="3.5" height="4.5" rx="1" fill="#FF8ECC"/>
-  <rect x="37.5" y="49.5" width="3.5" height="4.5" rx="1" fill="#FF8ECC"/>
-  <rect x="10.5" y="67" width="9.5" height="6.5" rx="1.8" fill="#FFF9B0"/>
-  <rect x="32" y="67" width="9.5" height="6.5" rx="1.8" fill="#FFF9B0"/>
-  <rect x="20" y="68" width="12" height="4.5" rx="1.2" fill="#1A1A1A"/>
-</svg>
-);}
+// EXACT CAR FROM YOUR PHOTO - clean version
+function CarSVG({lean=0}){
+  return(
+    <svg width="54" height="92" viewBox="0 0 54 92" fill="none" shapeRendering="geometricPrecision" style={{transform:`rotate(${lean*3}deg)`,display:"block"}}>
+      {/* soft outer capsule glow like in photo */}
+      <rect x="7" y="5" width="40" height="82" rx="20" fill="#3B225A" opacity="0.42"/>
+      {/* main body teal */}
+      <path d="M13.5 10.5 Q13.5 8 18.5 8 L35.5 8 Q40.5 8 40.5 10.5 L40.5 69.5 Q40.5 76.5 35 77.5 L19 77.5 Q13.5 76.5 13.5 69.5 Z" fill="#00D0B0"/>
+      {/* wheels black */}
+      <rect x="9.5" y="17.5" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
+      <rect x="34" y="17.5" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
+      <rect x="9.5" y="51" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
+      <rect x="34" y="51" width="10.5" height="15.5" rx="4.8" fill="#121212"/>
+      {/* pink front corners - exactly like photo */}
+      <rect x="14" y="11.2" width="5.2" height="5.2" rx="1.2" fill="#FF8ECC"/>
+      <rect x="34.8" y="11.2" width="5.2" height="5.2" rx="1.2" fill="#FF8ECC"/>
+      {/* small top dark window */}
+      <path d="M21 19 Q27 17.8 33 19 L33 23.2 Q27 24.5 21 23.2 Z" fill="#1A1A35"/>
+      {/* big windshield dark */}
+      <rect x="15.5" y="27" width="23" height="28.5" rx="8.5" fill="#22224A"/>
+      <rect x="16.5" y="28.5" width="21" height="25.5" rx="7" fill="#2B2B5E"/>
+      <rect x="31.5" y="30.5" width="2.4" height="18" rx="1.2" fill="rgba(255,255,255,0.18)"/>
+      {/* pink side markers */}
+      <rect x="12" y="47.5" width="3.2" height="5" rx="0.9" fill="#FF8ECC"/>
+      <rect x="38.8" y="47.5" width="3.2" height="5" rx="0.9" fill="#FF8ECC"/>
+      {/* yellow headlights at bottom + black bumper */}
+      <rect x="11.5" y="71" width="9.5" height="6.5" rx="1.6" fill="#FFFECC"/>
+      <rect x="32.5" y="71" width="9.5" height="6.5" rx="1.6" fill="#FFFECC"/>
+      <rect x="12.5" y="72" width="7.5" height="4.5" rx="1" fill="#FFF7A0"/>
+      <rect x="33.5" y="72" width="7.5" height="4.5" rx="1" fill="#FFF7A0"/>
+      <rect x="21.5" y="71.8" width="11" height="5" rx="1.2" fill="#1E1E1E"/>
+    </svg>
+  );
+}
 
 function SpeedSign({speed,state}){const numCol=state==="correct"?"#00c853":state==="wrong"?"#cc0000":"#111";const ringCol=state==="correct"?"#00e676":state==="wrong"?"#ff1744":"rgba(255,178,64,0.4)";const ringW=state?5:2.5;const fs=speed>=100?26:30;return(<div style={{position:"relative",width:66,height:88}}><svg width={66} height={88} viewBox="0 0 66 88" fill="none" style={{position:"absolute",inset:0}}><rect x="30.5" y="64" width="5" height="24" rx="2.5" fill="#b09ad9"/><circle cx="33" cy="33" r="32" fill="#e0245a"/><circle cx="33" cy="33" r="26" fill="#fff8f0"/><circle cx="33" cy="33" r="29" fill="none" stroke={ringCol} strokeWidth={ringW}/></svg><div style={{position:"absolute",left:0,right:0,top:"7.95%",height:"59%",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{fontFamily:"'Arial Black',Arial,sans-serif",fontWeight:900,fontSize:fs,lineHeight:1,color:numCol}}>{speed}</div></div></div>);}
 function Road({dashOffset,blur}){const dH=5.5,dG=7.5,tot=dH+dG;const dashes=[];for(let div=1;div<=LANE_COUNT-1;div++){const x=div*LANE_W;for(let i=-1;i<14;i++){const y=(i*tot+dashOffset)%(100+tot)-tot;dashes.push(<rect key={`${div}-${i}`} x={`${x-0.38}%`} y={`${y}%`} width="0.76%" height={`${dH}%`} fill="rgba(255,210,64,0.85)" rx="1"/>);}}return(<svg width="100%" height="100%" style={{position:"absolute",inset:0,pointerEvents:"none"}}><defs><linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#2a1c5c"/><stop offset="55%" stopColor="#301f6e"/><stop offset="100%" stopColor="#180f3d"/></linearGradient>{blur&&<filter id="sb"><feGaussianBlur stdDeviation="0 2.2"/></filter>}</defs><rect width="100%" height="100%" fill="url(#road)" filter={blur?"url(#sb)":undefined}/><rect x="0" width="3" height="100%" fill="rgba(0,230,201,0.4)"/><rect x="calc(100% - 3px)" width="3" height="100%" fill="rgba(0,230,201,0.4)"/>{dashes}</svg>);}
@@ -99,13 +111,7 @@ export default function UltraLane(){
     const onVis=()=>{if(document.hidden)doPause();};
     const onBlur=()=>{doPause();};
     const onPageHide=()=>{doPause();};
-    // instant pause when swipe up from bottom (iPhone home gesture)
-    const onTouchStartWindow=(e)=>{
-      if(phaseRef.current!=="playing"||deadRef.current)return;
-      const t=e.touches[0]; if(!t)return;
-      const fromBottom=window.innerHeight - t.clientY;
-      if(fromBottom<110){doPause();}
-    };
+    const onTouchStartWindow=(e)=>{if(phaseRef.current!=="playing"||deadRef.current)return;const t=e.touches[0]; if(!t)return; if(window.innerHeight - t.clientY < 110) doPause();};
     document.addEventListener("visibilitychange",onVis);
     window.addEventListener("blur",onBlur);
     window.addEventListener("pagehide",onPageHide);
@@ -116,23 +122,8 @@ export default function UltraLane(){
   const resumeGame=useCallback((e)=>{if(e){e.preventDefault();e.stopPropagation();}lastTRef.current=null;pausedRef.current=false;setPaused(false);},[]);
   const STEP_PX=Math.max(20,roadW*(LANE_W/100)*0.22);
   const shiftToLane=useCallback((t)=>{const c=Math.max(0,Math.min(LANE_COUNT-1,t));if(c===carLaneRef.current)return;const d=c>carLaneRef.current?1:-1;setCarLean(d);carLaneRef.current=c;setCarLane(c);SFX.gearShift();setCarPunch(true);setTimeout(()=>setCarPunch(false),140);},[]);
-  const startDrag=useCallback((cx,cy)=>{if(phase!=="playing"||deadRef.current||pausedRef.current)return;
-    // ignore drags starting near iPhone home bar to prevent sound + allow home swipe
-    if(window.innerHeight - cy < 90) return;
-    isDragRef.current=true;gestureUsedRef.current=false;gestureStartXRef.current=cx;gestureStartYRef.current=cy;
-  },[phase]);
-  const moveDrag=useCallback((cx,cy)=>{
-    if(!isDragRef.current||gestureUsedRef.current)return;
-    // if user drags down/up a lot near bottom, treat as home swipe -> pause instantly
-    if(window.innerHeight - cy < 70){doPause(); isDragRef.current=false; return;}
-    const dx=cx-gestureStartXRef.current;
-    const dy=cy-gestureStartYRef.current;
-    // only react to horizontal swipe, ignore vertical
-    if(Math.abs(dx) < STEP_PX) return;
-    if(Math.abs(dy) > Math.abs(dx)*1.2) return; // vertical swipe, don't shift lane
-    shiftToLane(carLaneRef.current+(dx>0?1:-1));
-    gestureUsedRef.current=true;
-  },[STEP_PX,shiftToLane,doPause]);
+  const startDrag=useCallback((cx,cy)=>{if(phase!=="playing"||deadRef.current||pausedRef.current)return; if(window.innerHeight - cy < 90) return; isDragRef.current=true;gestureUsedRef.current=false;gestureStartXRef.current=cx;gestureStartYRef.current=cy;},[phase]);
+  const moveDrag=useCallback((cx,cy)=>{if(!isDragRef.current||gestureUsedRef.current)return; if(window.innerHeight - cy < 70){doPause(); isDragRef.current=false; return;} const dx=cx-gestureStartXRef.current; const dy=cy-gestureStartYRef.current; if(Math.abs(dx) < STEP_PX) return; if(Math.abs(dy) > Math.abs(dx)*1.2) return; shiftToLane(carLaneRef.current+(dx>0?1:-1)); gestureUsedRef.current=true;},[STEP_PX,shiftToLane,doPause]);
   const endDrag=useCallback(()=>{if(!isDragRef.current)return;isDragRef.current=false;gestureUsedRef.current=false;setCarLean(0);},[]);
   const spawnSign=useCallback(()=>{const isM=Math.random()<0.48;const lane=Math.floor(Math.random()*LANE_COUNT);const speed=isM?carSpeedRef.current:SPEEDS.filter(s=>s!==carSpeedRef.current)[Math.floor(Math.random()*(SPEEDS.length-1))];const s={id:signIdRef.current++,lane,speed,y:-0.08,state:null};const n=[...signsRef.current,s];signsRef.current=n;setSigns(n);},[]);
 
@@ -153,10 +144,7 @@ export default function UltraLane(){
       const inLane=carLaneRef.current===s.lane;
       const isMatch=s.speed===carSpeedRef.current;
       if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
-        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
-          const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
-          travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(travelRef.current<=3.0);
-          return{...s,y:ny,state:"correct"};}
+        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1); const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600); travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(travelRef.current<=3.0); return{...s,y:ny,state:"correct"};}
         else if(isMatch&&!inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
         else if(!isMatch&&inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
         else{SFX.pass();return{...s,y:ny,state:"passed"};}
@@ -164,12 +152,7 @@ export default function UltraLane(){
       return{...s,y:ny};
     }).filter(s=>s.y<1.3);
     signsRef.current=updated;setSigns(updated);
-    if(newDead&&!deadRef.current){
-      deadRef.current=true;SFX.over();
-      const survived=scoreRef.current;
-      if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);}
-      setTimeout(()=>setPhase("result"),1800);
-    }
+    if(newDead&&!deadRef.current){deadRef.current=true;SFX.over(); const survived=scoreRef.current; if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);} setTimeout(()=>setPhase("result"),1800);}
     rafRef.current=requestAnimationFrame(tick);
   },[spawnSign,highScore]);
 
@@ -216,7 +199,7 @@ export default function UltraLane(){
           <div onTouchStart={e=>{e.preventDefault();e.stopPropagation();}} style={{position:"absolute",inset:0,zIndex:90,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(15,8,40,0.82)",backdropFilter:"blur(4px)"}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:22,pointerEvents:"auto"}}>
               <div style={{fontFamily:"'Arial Black',Arial,sans-serif",fontWeight:900,fontSize:34,letterSpacing:5,backgroundImage:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>PAUSED</div>
-              <button onClick={resumeGame} onTouchEnd={resumeGame} style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"14px 36px",fontSize:15,fontWeight:900,letterSpacing:2,cursor:"pointer",fontFamily:"'Arial Black',Arial,sans-serif"}}>RESUME</button>
+              <button onClick={resumeGame} onTouchEnd={resumeGame} style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"14px 36px",fontSize:15,fontWeight:900,letterSpacing:2,cursor:"pointer",fontFamily:"'Arial Black',Arial,sans-serif"}}>GO</button>
             </div>
           </div>
         )}
