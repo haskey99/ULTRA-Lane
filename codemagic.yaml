@@ -17,6 +17,7 @@ workflows:
         script: |
           npm install
           npm run build
+          npx cap add ios || true
           npx cap sync ios
           npx cap copy ios
       - name: Install CocoaPods
