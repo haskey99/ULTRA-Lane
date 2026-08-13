@@ -31,7 +31,6 @@ function Scenery({offset,roadW}){if(!roadW)return null;const items=[],sp=120,n=1
 
 export default function UltraLane(){
   const [phase,setPhase]=useState("intro");
-  const [score,setScore]=useState(0);
   const [streak,setStreak]=useState(0);
   const [highScore,setHighScore]=useState(0);
   const [newHS,setNewHS]=useState(false);
@@ -109,7 +108,7 @@ export default function UltraLane(){
       const inLane=carLaneRef.current===s.lane;
       const isMatch=s.speed===carSpeedRef.current;
       if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
-        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setScore(scoreRef.current);setStreak(st=>st+1);
+        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
           const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
           travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(travelRef.current<=3.0);
           return{...s,y:ny,state:"correct"};}
@@ -134,7 +133,7 @@ export default function UltraLane(){
   },[spawnSign,highScore]);
 
   useEffect(()=>{if(phase==="playing"&&!paused){lastTRef.current=null;rafRef.current=requestAnimationFrame(tick);}return()=>{cancelAnimationFrame(rafRef.current);lastTRef.current=null;};},[phase,paused,tick]);
-  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=TRAVEL_TIME;spawnTimerRef.current=1.2;spawnIntRef.current=SPAWN_INTERVAL;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setScore(0);setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
+  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=TRAVEL_TIME;spawnTimerRef.current=1.2;spawnIntRef.current=SPAWN_INTERVAL;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
 
   const signScale=y=>Math.max(0.25,Math.min(1.1,0.25+Math.max(0,y)*0.95));
   const carXPct=carLane*LANE_W+LANE_W/2;
@@ -145,11 +144,11 @@ export default function UltraLane(){
       <div style={{width:"100vw",height:"100vh",height:"100dvh",background:PAGE_BG,backgroundColor:"#1b1150",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',Arial,sans-serif",overflow:"hidden",userSelect:"none",touchAction:"none",position:"relative",margin:0,padding:0}}>
         <div style={{position:"absolute",inset:0,opacity:0.22,pointerEvents:"none"}}><Road dashOffset={dashOff}/></div>
         <div style={{position:"relative",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100vh",height:"100dvh",paddingBottom:"18vh"}}>
-          <div style={{background:"rgba(26,17,60,0.92)",border:"1.5px solid rgba(255,111,97,0.4)",borderRadius:22,padding:"24px 22px 22px",maxWidth:340,width:"92%",display:"flex",flexDirection:"column",alignItems:"center",gap:14,boxShadow:"0 14px 60px rgba(20,8,50,0.7)"}}>
+          <div style={{background:"rgba(26,17,60,0.92)",border:"1.5px solid rgba(255,111,97,0.4)",borderRadius:22,padding:"24px 22px 22px",maxWidth:340,width:"92%",display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
             <h1 style={{backgroundImage:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontSize:46,fontWeight:900,textAlign:"center",margin:0,lineHeight:0.96,letterSpacing:10,whiteSpace:"pre-line",fontFamily:"'Arial Black',Arial,sans-serif"}}>{"ULTRA\nLANE"}</h1>
             {phase==="result"&&(<><p style={{color:"#b6a6e6",fontSize:12,margin:0,letterSpacing:1.5}}>{newHS?"🏆 New High Score!":"Game over."}</p><div style={{width:"100%",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"12px 8px",display:"flex",justifyContent:"space-around"}}>{[["STREAK",`${streak}`],["BEST",`${highScore}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:i===1?"#ffd23f":"#fff",fontSize:21,fontWeight:900,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}</div></>)}
             {phase==="intro"&&(<><p style={{color:"#b6a6e6",fontSize:12,margin:0,letterSpacing:1.5,textAlign:"center"}}>3 lanes. Drag your car. One chance.</p>{highScore>0&&<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>BEST STREAK</span><span style={{color:"#ffd23f",fontSize:21,fontWeight:900,lineHeight:1.25,fontFamily:"'Arial Black',Arial,sans-serif"}}>{highScore}</span></div>}</>)}
-            <button style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"15px 0",fontSize:16,fontWeight:900,letterSpacing:3,cursor:"pointer",width:"100%",fontFamily:"'Arial Black',Arial,sans-serif"}} onClick={()=>setPhase("playing")}>{phase==="result"?"TRY AGAIN":"GO"}</button>
+            <button style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"15px 0",fontSize:16,fontWeight:900,letterSpacing:3,cursor:"pointer",width:"100%",fontFamily:"'Arial Black',Arial,sans-serif"}} onClick={()=>setPhase("playing")}>GO</button>
           </div>
         </div>
         <div style={{position:"absolute",left:"50%",bottom:`${CAR_BOTTOM}%`,transform:"translateX(-50%)",zIndex:5}}><CarSVG/></div>
@@ -159,7 +158,7 @@ export default function UltraLane(){
 
   return(
     <div style={{width:"100vw",height:"100vh",height:"100dvh",background:PAGE_BG,backgroundColor:"#1b1150",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',Arial,sans-serif",overflow:"hidden",userSelect:"none",touchAction:"none",position:"relative",margin:0,padding:0}}>
-      <div style={{width:"100%",maxWidth:440,display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"calc(env(safe-area-inset-top, 0px) + 54px)",paddingBottom:"12px",paddingLeft:"18px",paddingRight:"18px",background:"linear-gradient(180deg, rgba(27,17,80,0.97), rgba(58,31,107,0.97))",borderBottom:"1px solid rgba(255,111,97,0.28)",zIndex:50,flexShrink:0}}>
+      <div style={{width:"100%",maxWidth:440,display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"calc(env(safe-area-inset-top, 0px) + 54px)",paddingBottom:"12px",paddingLeft:"28px",paddingRight:"28px",background:"linear-gradient(180deg, rgba(27,17,80,0.97), rgba(58,31,107,0.97))",borderBottom:"1px solid rgba(255,111,97,0.28)",zIndex:50,flexShrink:0,boxSizing:"border-box"}}>
         {[["STREAK",`${streak}`],["BEST",`${highScore}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:i===1?"flex-end":"flex-start"}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:"#ffd23f",fontSize:21,fontWeight:900,lineHeight:1.25,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}
       </div>
       <div ref={roadRef} style={{flex:1,width:"100%",maxWidth:440,position:"relative",overflow:"hidden",cursor:"pointer"}}
@@ -176,7 +175,7 @@ export default function UltraLane(){
           <div onTouchStart={e=>{e.preventDefault();e.stopPropagation();}} style={{position:"absolute",inset:0,zIndex:90,display:"flex",alignItems:"center",justifyContent:"center",background:"rgba(15,8,40,0.82)",backdropFilter:"blur(4px)"}}>
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:22,pointerEvents:"auto"}}>
               <div style={{fontFamily:"'Arial Black',Arial,sans-serif",fontWeight:900,fontSize:34,letterSpacing:5,backgroundImage:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"}}>PAUSED</div>
-              <button onClick={resumeGame} onTouchEnd={resumeGame} style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"14px 36px",fontSize:15,fontWeight:900,letterSpacing:2,cursor:"pointer",fontFamily:"'Arial Black',Arial,sans-serif",boxShadow:"0 4px 24px rgba(255,111,97,0.5)"}}>RESUME</button>
+              <button onClick={resumeGame} onTouchEnd={resumeGame} style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"14px 36px",fontSize:15,fontWeight:900,letterSpacing:2,cursor:"pointer",fontFamily:"'Arial Black',Arial,sans-serif"}}>RESUME</button>
             </div>
           </div>
         )}
