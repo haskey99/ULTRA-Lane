@@ -4,8 +4,6 @@ workflows:
     max_build_duration: 60
     instance_type: mac_mini_m2
     environment:
-      groups:
-        - node
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
@@ -15,22 +13,22 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm install
+          npm ci
           npm run build
-          npx cap add ios || true
+          ls -lh dist
           npx cap sync ios
-          npx cap copy ios
-      - name: Install CocoaPods
+      - name: Install Pods
         script: |
           cd ios/App
           pod install --repo-update
-      - name: Build unsigned IPA for Sideloadly
+      - name: Build unsigned IPA
         script: |
           cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -archivePath $CM_BUILD_DIR/App.xcarchive archive CODE_SIGNING_ALLOWED=NO
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath $CM_BUILD_DIR/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 
           mkdir -p $CM_BUILD_DIR/Payload
-          cp -r $CM_BUILD_DIR/App.xcarchive/Products/Applications/App.app $CM_BUILD_DIR/Payload/
+          cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
           cd $CM_BUILD_DIR
-          zip -r ULTRA-LANE-unsigned.ipa Payload
+          zip -r -y ULTRA-LANE-unsigned.ipa Payload
+          ls -lh ULTRA-LANE-unsigned.ipa
     artifacts:
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
