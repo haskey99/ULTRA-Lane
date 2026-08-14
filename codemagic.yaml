@@ -15,6 +15,7 @@ workflows:
         script: |
           npm install
           npx vite build
+          npx cap add ios || true
           npx cap sync ios
       - name: Install Pods
         script: |
@@ -28,5 +29,6 @@ workflows:
           cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
           cd $CM_BUILD_DIR
           zip -r -y ULTRA-LANE-unsigned.ipa Payload
+          ls -lh ULTRA-LANE-unsigned.ipa
     artifacts:
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
