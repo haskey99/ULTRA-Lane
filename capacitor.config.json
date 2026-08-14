@@ -1,10 +1,5 @@
 {
   "appId": "com.haskey.ultralane",
   "appName": "ULTRA Lane",
-  "webDir": "dist",
-  "plugins": {
-    "AdMob": {
-      "appId": "ca-app-pub-95313946868373"
-    }
-  }
+  "webDir": "dist"
 }
