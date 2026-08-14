@@ -1,6 +1,6 @@
 {
   "appId": "com.haskey.ultralane",
-  "appName": "ULTRA Lane",
+  "ULTRA Lane": "ULTRA Lane",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "plugins": {
