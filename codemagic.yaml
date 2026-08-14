@@ -13,9 +13,8 @@ workflows:
     scripts:
       - name: Install dependencies
         script: |
-          npm ci
-          npm run build
-          ls -lh dist
+          npm install
+          npx vite build
           npx cap sync ios
       - name: Install Pods
         script: |
@@ -29,6 +28,5 @@ workflows:
           cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
           cd $CM_BUILD_DIR
           zip -r -y ULTRA-LANE-unsigned.ipa Payload
-          ls -lh ULTRA-LANE-unsigned.ipa
     artifacts:
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
