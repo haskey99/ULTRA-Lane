@@ -15,6 +15,7 @@ workflows:
         script: |
           npm install
           npx vite build
+          npx cap init "ULTRA Lane" com.haskey.ultralane --web-dir=dist --npm-client=npm || true
           npx cap add ios || true
           npx cap sync ios
       - name: Install Pods
