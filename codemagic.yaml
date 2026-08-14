@@ -15,8 +15,8 @@ workflows:
         script: |
           npm install
           npx vite build
-          npx cap init "ULTRA Lane" com.haskey.ultralane --web-dir=dist --npm-client=npm || true
-          npx cap add ios || true
+          rm -rf ios
+          npx cap add ios
           npx cap sync ios
       - name: Install Pods
         script: |
@@ -24,21 +24,11 @@ workflows:
           pod install --repo-update
       - name: Build unsigned IPA
         script: |
-          set -ex
           cd ios/App
           xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath $CM_BUILD_DIR/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 
-          echo "=== FINDING APP.APP ==="
-          find $CM_BUILD_DIR/DerivedData -name "App.app" -type d
-          APP_PATH=$(find $CM_BUILD_DIR/DerivedData -name "App.app" -type d | head -n 1)
-          echo "Found: $APP_PATH"
-          if [ -z "$APP_PATH" ]; then echo "FAILED - App.app not found"; exit 1; fi
-          ls -lh "$APP_PATH/Info.plist"
-          rm -rf $CM_BUILD_DIR/Payload
           mkdir -p $CM_BUILD_DIR/Payload
-          cp -R "$APP_PATH" $CM_BUILD_DIR/Payload/
+          cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
           cd $CM_BUILD_DIR
-          rm -f ULTRA-LANE-unsigned.ipa
           zip -r ULTRA-LANE-unsigned.ipa Payload
-          ls -lh ULTRA-LANE-unsigned.ipa
     artifacts:
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
