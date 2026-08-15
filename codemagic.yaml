@@ -32,3 +32,42 @@ workflows:
           zip -r ULTRA-LANE-unsigned.ipa Payload
     artifacts:
       - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
+
+  ios-app-store:
+    name: iOS App Store TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20.19.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npx vite build
+          rm -rf ios
+          npx cap add ios
+          npx cap sync ios
+      - name: Install Pods
+        script: |
+          cd ios/App
+          pod install --repo-update
+      - name: Set up code signing
+        script: |
+          xcode-project use-profiles
+      - name: Build IPA for App Store
+        script: |
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        submit_to_testflight: true
