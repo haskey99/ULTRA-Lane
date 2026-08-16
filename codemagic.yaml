@@ -37,6 +37,11 @@ workflows:
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+          echo "New build number: $BUILD_NUMBER"
       - name: Build IPA for App Store
         script: |
           xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
