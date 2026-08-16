@@ -9,7 +9,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_ID: "com.haskey.ultralane.A837388W4F"
+        APP_ID: "com.haskey.ultralane"
       node: 20.19.0
       xcode: latest
       cocoapods: default
@@ -18,7 +18,7 @@ workflows:
         script: |
           npm install
           npx vite build
-          node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));"
+          node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));"
           rm -rf ios
           npx cap add ios
           npm install @capacitor/assets --save-dev
