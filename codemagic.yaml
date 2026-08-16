@@ -31,18 +31,15 @@ workflows:
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 0.0.6
-          echo "Set to 0.0.6 build $BUILD_NUMBER"
       - name: Set up code signing
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/cert_key 2048
-          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create --verbose
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
       - name: Build IPA for App Store
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME" --archive-method app-store
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
