@@ -28,20 +28,20 @@ workflows:
         script: |
           cd ios/App
           pod install --repo-update
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+          echo "Build number set to $BUILD_NUMBER"
       - name: Set up code signing
         script: |
           keychain initialize
-          echo "Generating private key..."
+          echo "Generating new private key for fresh cert..."
           openssl genrsa -out /tmp/cert_key 2048
           export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
-      - name: Increment build number
-        script: |
-          cd ios/App
-          agvtool new-version -all $BUILD_NUMBER
-          echo "New build number: $BUILD_NUMBER"
       - name: Build IPA for App Store
         script: |
           xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
