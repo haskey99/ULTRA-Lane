@@ -41,45 +41,9 @@ workflows:
           openssl req -new -key /tmp/private.key -out /tmp/csr.pem -subj "/CN=iOS Distribution/O=ULTRA Lane/C=US"
           app-store-connect certificates create --type IOS_DISTRIBUTION --csr @file:/tmp/csr.pem --save --verbose || true
           export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/private.key)
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose || true
-          keychain add-certificates || true
-          xcode-project use-profiles --export-options /tmp/ExportOptions.plist || true
-          python3 << 'PY'
-          import plistlib, os, glob, subprocess
-          path="/tmp/ExportOptions.plist"
-          app_id=os.environ.get("APP_ID","com.haskey.ultralane.A837388W4F")
-          data={}
-          if os.path.exists(path):
-              try:
-                  with open(path,"rb") as f:
-                      data=plistlib.load(f)
-              except:
-                  data={}
-          pp=data.get("provisioningProfiles")
-          if isinstance(pp, list):
-              profile_name=pp[0] if pp and isinstance(pp[0], str) else "ULTRA Lane App Store"
-              data["provisioningProfiles"]={app_id: profile_name}
-              print(f"Fixed array bug to dict: {data['provisioningProfiles']}")
-          if not data.get("provisioningProfiles"):
-              profiles=glob.glob(os.path.expanduser("~/Library/MobileDevice/Provisioning Profiles/*.mobileprovision"))
-              pname="ULTRA Lane App Store"
-              if profiles:
-                  try:
-                      out=subprocess.check_output(["security","cms","-D","-i",profiles[-1]], stderr=subprocess.DEVNULL)
-                      d=plistlib.loads(out)
-                      pname=d.get("Name", pname)
-                  except Exception as e:
-                      print(f"Profile read fail: {e}")
-              data["provisioningProfiles"]={app_id: pname}
-          data["method"]="app-store"
-          data["teamID"]="A837388W4F"
-          data["signingStyle"]="manual"
-          with open(path,"wb") as f:
-              plistlib.dump(data,f)
-          print("Final ExportOptions.plist:")
-          print(data)
-          PY
-          cat /tmp/ExportOptions.plist
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
+          keychain add-certificates
+          xcode-project use-profiles --export-options /tmp/ExportOptions.plist
       - name: Build IPA for App Store
         script: |
           mkdir -p build/ios/ipa
