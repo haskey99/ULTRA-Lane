@@ -32,14 +32,13 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
-          agvtool new-marketing-version 0.0.7
+          agvtool new-marketing-version 0.0.8
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create
           keychain add-certificates
-          xcode-project use-profiles --verbose
-          rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*Development*.mobileprovision || true
+          xcode-project use-profiles
           cat > /tmp/ExportOptions.plist << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
