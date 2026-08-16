@@ -17,10 +17,12 @@ workflows:
       - name: Install dependencies
         script: |
           npm install
+          npm install @capacitor/assets --save-dev
           npx vite build
           node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));"
           rm -rf ios
           npx cap add ios
+          npx capacitor-assets generate --ios
           npx cap sync ios
       - name: Install Pods
         script: |
@@ -30,11 +32,11 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
-          agvtool new-marketing-version 0.0.6
+          agvtool new-marketing-version 0.0.7
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT
           keychain add-certificates
           xcode-project use-profiles --verbose
           rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*Development*.mobileprovision || true
@@ -57,7 +59,6 @@ workflows:
           mkdir -p build/ios/ipa
           xcodebuild -workspace "$XCODE_WORKSPACE" -scheme "$XCODE_SCHEME" -configuration Release -archivePath /tmp/App.xcarchive archive CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="Apple Distribution" DEVELOPMENT_TEAM=A837388W4F COMPILER_INDEX_STORE_ENABLE=NO
           xcodebuild -exportArchive -archivePath /tmp/App.xcarchive -exportPath build/ios/ipa -exportOptionsPlist /tmp/ExportOptions.plist
-          ls -lh build/ios/ipa/
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
