@@ -1,3 +1,38 @@
+workflows:
+  ios-unsigned:
+    name: iOS Unsigned for Sideloadly
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      vars:
+        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
+        XCODE_SCHEME: "App"
+      node: 20.19.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+          npx vite build
+          rm -rf ios
+          npx cap add ios
+          npx cap sync ios
+      - name: Install Pods
+        script: |
+          cd ios/App
+          pod install --repo-update
+      - name: Build unsigned IPA
+        script: |
+          cd ios/App
+          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath $CM_BUILD_DIR/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 
+          mkdir -p $CM_BUILD_DIR/Payload
+          cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
+          cd $CM_BUILD_DIR
+          zip -r ULTRA-LANE-unsigned.ipa Payload
+    artifacts:
+      - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
+
   ios-app-store:
     name: iOS App Store TestFlight
     max_build_duration: 60
