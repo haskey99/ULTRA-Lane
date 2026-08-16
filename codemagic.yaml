@@ -26,18 +26,23 @@ workflows:
         script: |
           cd ios/App
           pod install --repo-update
+      - name: Increment build number
+        script: |
+          cd ios/App
+          agvtool new-version -all $BUILD_NUMBER
+          agvtool new-marketing-version 0.0.5
+          echo "Set to version 0.0.5 build $BUILD_NUMBER"
       - name: Set up code signing
         script: |
           keychain initialize
           openssl genrsa -out /tmp/cert_key 2048
           export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
-          echo "Fetching BOTH Dev + AppStore profiles..."
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
       - name: Build IPA for App Store
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME" --build-number $BUILD_NUMBER --version 0.0.5
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
     artifacts:
       - build/ios/ipa/*.ipa
     publishing:
