@@ -36,7 +36,10 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect certificates create --type IOS_DISTRIBUTION --save --verbose || true
+          openssl genrsa -out /tmp/private.key 2048
+          openssl req -new -key /tmp/private.key -out /tmp/csr.pem -subj "/CN=iOS Distribution/O=ULTRA Lane/C=US"
+          app-store-connect certificates create --type IOS_DISTRIBUTION --csr @file:/tmp/csr.pem --save --verbose || true
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/private.key)
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
           xcode-project use-profiles
