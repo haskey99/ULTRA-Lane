@@ -34,10 +34,12 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT
+          openssl genrsa -out /tmp/cert_key 2048
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create
           keychain add-certificates
           xcode-project use-profiles --verbose
-          echo "Keeping only App Store profile for export to fix 90161"
+          echo "Forcing App Store export to fix 90161"
           rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*Development*.mobileprovision || true
           rm -f ~/Library/MobileDevice/Provisioning\ Profiles/*development*.mobileprovision || true
       - name: Build IPA for App Store
