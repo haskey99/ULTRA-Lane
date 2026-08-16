@@ -31,10 +31,11 @@ workflows:
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
           agvtool new-marketing-version 0.0.5
-          echo "Set to version 0.0.5 build $BUILD_NUMBER"
       - name: Set up code signing
         script: |
           keychain initialize
+          openssl genrsa -out /tmp/cert_key 2048
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
