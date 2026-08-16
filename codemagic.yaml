@@ -9,7 +9,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_ID: "com.haskey.ultralane"
+        APP_ID: "com.haskey.ultralane.A837388W4F"
       node: 20.19.0
       xcode: latest
       cocoapods: default
@@ -18,17 +18,12 @@ workflows:
         script: |
           npm install
           npx vite build
-          # Force bundle ID to com.haskey.ultralane - robust version
-          node -e "const fs=require('fs'); let p='capacitor.config.json'; let c=JSON.parse(fs.readFileSync(p,'utf8')); c.appId='com.haskey.ultralane'; fs.writeFileSync(p, JSON.stringify(c,null,2)); console.log('Fixed appId to', c.appId)"
-          cat capacitor.config.json | grep appId
+          node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2)); console.log('Using bundle', c.appId)"
           rm -rf ios
           npx cap add ios
           npm install @capacitor/assets --save-dev
           npx capacitor-assets generate --ios --iconBackgroundColor "#000000" --splashBackgroundColor "#000000"
           npx cap sync ios
-          # Force Xcode bundle ID too
-          sed -i '' 's/PRODUCT_BUNDLE_IDENTIFIER = .*/PRODUCT_BUNDLE_IDENTIFIER = com.haskey.ultralane;/g' ios/App/App.xcodeproj/project.pbxproj
-          grep -m1 "PRODUCT_BUNDLE_IDENTIFIER" ios/App/App.xcodeproj/project.pbxproj
       - name: Install Pods
         script: |
           cd ios/App
@@ -36,8 +31,9 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
+          echo "Fetching for $APP_ID"
           app-store-connect fetch-signing-files $APP_ID --type IOS_APP_STORE --create
-          ls -lh ~/Library/MobileDevice/Provisioning\ Profiles/ || echo "No profiles yet"
+          ls -l ~/Library/MobileDevice/Provisioning\ Profiles/ | tail -5
           keychain add-certificates
           xcode-project use-profiles
       - name: Build IPA for App Store
