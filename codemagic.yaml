@@ -31,9 +31,12 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create
+          echo "Generating private key..."
+          openssl genrsa -out /tmp/cert_key 2048
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --verbose
       - name: Build IPA for App Store
         script: |
           xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
