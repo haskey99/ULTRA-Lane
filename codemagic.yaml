@@ -13,10 +13,6 @@ workflows:
       node: 20.19.0
       xcode: latest
       cocoapods: default
-    apple_api_key:
-      key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-      issuer_id: $APP_STORE_CONNECT_ISSUER_ID
-      key: $APP_STORE_CONNECT_PRIVATE_KEY
     scripts:
       - name: Install dependencies
         script: |
