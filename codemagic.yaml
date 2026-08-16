@@ -1,3 +1,4 @@
+workflows:
   ios-app-store:
     name: iOS App Store TestFlight
     max_build_duration: 60
