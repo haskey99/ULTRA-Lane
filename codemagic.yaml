@@ -33,7 +33,7 @@ workflows:
         script: |
           cd ios/App
           agvtool new-version -all $BUILD_NUMBER
-          agvtool new-marketing-version 0.0.8
+          agvtool new-marketing-version 1.0.9
       - name: Set up code signing
         script: |
           keychain initialize
