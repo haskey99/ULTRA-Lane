@@ -21,33 +21,25 @@ workflows:
           node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));"
           rm -rf ios
           npx cap add ios
-          npm install @capacitor/assets --save-dev
-          npx capacitor-assets generate --ios --iconBackgroundColor "#000000" --splashBackgroundColor "#000000"
           npx cap sync ios
       - name: Install Pods
         script: |
           cd ios/App
           pod install --repo-update
-      - name: Increment build number
-        script: |
-          cd ios/App
-          agvtool new-version -all $BUILD_NUMBER
-          echo "Build number set to $BUILD_NUMBER"
       - name: Set up code signing
         script: |
           keychain initialize
-          echo "Generating new private key for fresh cert..."
           openssl genrsa -out /tmp/cert_key 2048
           export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
+          echo "Fetching BOTH Dev + AppStore profiles..."
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --type IOS_APP_DEVELOPMENT --create --verbose
           keychain add-certificates
           xcode-project use-profiles --verbose
       - name: Build IPA for App Store
         script: |
-          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME"
+          xcode-project build-ipa --workspace "$XCODE_WORKSPACE" --scheme "$XCODE_SCHEME" --build-number $BUILD_NUMBER --version 0.0.5
     artifacts:
       - build/ios/ipa/*.ipa
-      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
