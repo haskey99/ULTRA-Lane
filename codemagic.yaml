@@ -37,13 +37,28 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          openssl genrsa -out /tmp/private.key 2048
-          openssl req -new -key /tmp/private.key -out /tmp/csr.pem -subj "/CN=iOS Distribution/O=ULTRA Lane/C=US"
-          app-store-connect certificates create --type IOS_DISTRIBUTION --csr @file:/tmp/csr.pem --save --verbose || true
-          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/private.key)
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          xcode-project use-profiles --export-options /tmp/ExportOptions.plist
+          PROFILE=$(ls ~/Library/MobileDevice/Provisioning\ Profiles/*.mobileprovision | tail -n 1)
+          PROFILE_NAME=$(security cms -D -i "$PROFILE" 2>/dev/null | /usr/libexec/PlistBuddy -c "Print :Name" /dev/stdin 2>/dev/null || echo "ULTRA Lane App Store")
+          echo "Using profile: $PROFILE_NAME"
+          cat > /tmp/ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store</string>
+            <key>teamID</key><string>A837388W4F</string>
+            <key>signingStyle</key><string>manual</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>$APP_ID</key>
+              <string>$PROFILE_NAME</string>
+            </dict>
+          </dict>
+          </plist>
+          EOF
+          cat /tmp/ExportOptions.plist
       - name: Build IPA for App Store
         script: |
           mkdir -p build/ios/ipa
