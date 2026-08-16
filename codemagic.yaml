@@ -42,21 +42,7 @@ workflows:
           export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/private.key)
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          xcode-project use-profiles
-          cat > /tmp/ExportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store</string>
-            <key>teamID</key>
-            <string>A837388W4F</string>
-            <key>signingStyle</key>
-            <string>manual</string>
-          </dict>
-          </plist>
-          EOF
+          xcode-project use-profiles --export-options /tmp/ExportOptions.plist
       - name: Build IPA for App Store
         script: |
           mkdir -p build/ios/ipa
