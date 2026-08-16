@@ -36,7 +36,7 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect certificates generate --type IOS_DISTRIBUTION --save || true
+          app-store-connect certificates create --type IOS_DISTRIBUTION --save --verbose || true
           app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
           xcode-project use-profiles
