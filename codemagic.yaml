@@ -24,6 +24,7 @@ workflows:
           npx cap add ios
           npx capacitor-assets generate --ios
           npx cap sync ios
+          /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" ios/App/App/Info.plist || /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" ios/App/App/Info.plist
       - name: Install Pods
         script: |
           cd ios/App
