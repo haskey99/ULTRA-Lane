@@ -18,7 +18,7 @@ workflows:
         script: |
           npm install
           npx vite build
-          node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2)); console.log('Using bundle', c.appId)"
+          node -e "const fs=require('fs'); let c=JSON.parse(fs.readFileSync('capacitor.config.json','utf8')); c.appId='com.haskey.ultralane.A837388W4F'; fs.writeFileSync('capacitor.config.json', JSON.stringify(c,null,2));"
           rm -rf ios
           npx cap add ios
           npm install @capacitor/assets --save-dev
@@ -31,9 +31,12 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          echo "Fetching for $APP_ID"
+          if [ -z "$CERTIFICATE_PRIVATE_KEY" ]; then
+            echo "Generating private key..."
+            openssl genrsa -out /tmp/cert_key 2048
+            export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/cert_key)
+          fi
           app-store-connect fetch-signing-files $APP_ID --type IOS_APP_STORE --create
-          ls -l ~/Library/MobileDevice/Provisioning\ Profiles/ | tail -5
           keychain add-certificates
           xcode-project use-profiles
       - name: Build IPA for App Store
