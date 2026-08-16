@@ -1,38 +1,3 @@
-workflows:
-  ios-unsigned:
-    name: iOS Unsigned for Sideloadly
-    max_build_duration: 60
-    instance_type: mac_mini_m2
-    environment:
-      vars:
-        XCODE_WORKSPACE: "ios/App/App.xcworkspace"
-        XCODE_SCHEME: "App"
-      node: 20.19.0
-      xcode: latest
-      cocoapods: default
-    scripts:
-      - name: Install dependencies
-        script: |
-          npm install
-          npx vite build
-          rm -rf ios
-          npx cap add ios
-          npx cap sync ios
-      - name: Install Pods
-        script: |
-          cd ios/App
-          pod install --repo-update
-      - name: Build unsigned IPA
-        script: |
-          cd ios/App
-          xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -sdk iphoneos -derivedDataPath $CM_BUILD_DIR/DerivedData CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" 
-          mkdir -p $CM_BUILD_DIR/Payload
-          cp -R $CM_BUILD_DIR/DerivedData/Build/Products/Release-iphoneos/App.app $CM_BUILD_DIR/Payload/
-          cd $CM_BUILD_DIR
-          zip -r ULTRA-LANE-unsigned.ipa Payload
-    artifacts:
-      - $CM_BUILD_DIR/ULTRA-LANE-unsigned.ipa
-
   ios-app-store:
     name: iOS App Store TestFlight
     max_build_duration: 60
@@ -41,6 +6,7 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
+        APP_ID: "com.haskey.ultralane"
       node: 20.19.0
       xcode: latest
       cocoapods: default
@@ -51,6 +17,8 @@ workflows:
           npx vite build
           rm -rf ios
           npx cap add ios
+          npm install @capacitor/assets --save-dev
+          npx capacitor-assets generate --ios --iconBackgroundColor "#000000" --splashBackgroundColor "#000000"
           npx cap sync ios
       - name: Install Pods
         script: |
@@ -58,6 +26,9 @@ workflows:
           pod install --repo-update
       - name: Set up code signing
         script: |
+          keychain initialize
+          app-store-connect fetch-signing-files $APP_ID --type IOS_APP_STORE --create
+          keychain add-certificates
           xcode-project use-profiles
       - name: Build IPA for App Store
         script: |
