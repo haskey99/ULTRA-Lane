@@ -8,8 +8,22 @@ const HIT_ZONE_Y = 0.83;
 const SPEEDS = [20,30,40,50,60,70,80,90,100,110,120,130];
 const TRAVEL_TIME = 1.5;
 const SPAWN_INTERVAL = 1.0;
-function getTravelTime(){return TRAVEL_TIME;}
-function getSpawnInterval(){return SPAWN_INTERVAL;}
+
+// === YOUR REQUEST ===
+const DEATH_LIMIT = 6; // was 1, now 6
+const LEARN_TIME = 18; // seconds flat easy at start
+
+// 7% easier than the current +15% hard version
+const MEDIUM_TRAVEL_TIME = TRAVEL_TIME * 1.07;
+const MEDIUM_SPAWN_INTERVAL = SPAWN_INTERVAL * 1.07;
+
+// Learn phase is even easier, flat (no ramp)
+const EASY_TRAVEL_TIME = MEDIUM_TRAVEL_TIME * 1.30;
+const EASY_SPAWN_INTERVAL = MEDIUM_SPAWN_INTERVAL * 1.40;
+
+function getTravelTime(isLearn){ return isLearn? EASY_TRAVEL_TIME : MEDIUM_TRAVEL_TIME; }
+function getSpawnInterval(isLearn){ return isLearn? EASY_SPAWN_INTERVAL : MEDIUM_SPAWN_INTERVAL; }
+
 function pickCarSpeed(ex){const pool=SPEEDS.filter(s=>s!==ex);return pool[Math.floor(Math.random()*pool.length)];}
 const HS_KEY="speedlane:highscore-v2";
 
@@ -80,6 +94,7 @@ export default function UltraLane(){
   const [speedBlur,setSpeedBlur]=useState(false);
   const [speedFlash,setSpeedFlash]=useState(false);
   const [paused,setPaused]=useState(false);
+  const [deathCount,setDeathCount]=useState(0);
   const pausedRef=useRef(false);
   const phaseRef=useRef("intro");
   const roadRef=useRef(null);
@@ -90,11 +105,13 @@ export default function UltraLane(){
   const scoreRef=useRef(0);
   const carLaneRef=useRef(1);
   const carSpeedRef=useRef(70);
-  const travelRef=useRef(TRAVEL_TIME);
+  const travelRef=useRef(MEDIUM_TRAVEL_TIME);
   const spawnTimerRef=useRef(1.5);
-  const spawnIntRef=useRef(SPAWN_INTERVAL);
+  const spawnIntRef=useRef(MEDIUM_SPAWN_INTERVAL);
   const deadRef=useRef(false);
   const signsRef=useRef([]);
+  const deathCountRef=useRef(0);
+  const gameTimeRef=useRef(0);
   const isDragRef=useRef(false);
   const gestureStartXRef=useRef(0);
   const gestureStartYRef=useRef(0);
@@ -142,35 +159,65 @@ export default function UltraLane(){
     if(!lastTRef.current)lastTRef.current=ts;
     const dt=Math.min((ts-lastTRef.current)/1000,0.05);
     lastTRef.current=ts;
+
+    // --- FLAT LEARN PHASE ---
+    gameTimeRef.current += dt;
+    const isLearn = gameTimeRef.current < LEARN_TIME;
+    travelRef.current = getTravelTime(isLearn);
+    spawnIntRef.current = getSpawnInterval(isLearn);
+
     const spd=1/travelRef.current;
     setDashOff(p=>(p+spd*dt*100*1.5)%13);
     setScenOff(p=>p+spd*dt*620);
     spawnTimerRef.current-=dt;
     if(spawnTimerRef.current<=0){spawnSign();spawnTimerRef.current=spawnIntRef.current;}
-    let newDead=false;
+    let shouldEndGame=false;
     const updated=signsRef.current.map(s=>{
       if(s.state!==null)return{...s,y:s.y+spd*dt};
       const ny=s.y+spd*dt;
       const inLane=carLaneRef.current===s.lane;
       const isMatch=s.speed===carSpeedRef.current;
       if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
-        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
+        if(isMatch&&inLane){
+          SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
           const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
-          travelRef.current=getTravelTime();spawnIntRef.current=getSpawnInterval();setSpeedBlur(false);
-          return{...s,y:ny,state:"correct"};}
-        else if(isMatch&&!inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
-        else if(!isMatch&&inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
+          setSpeedBlur(false);
+          return{...s,y:ny,state:"correct"};
+        }
+        else if(isMatch&&!inLane){
+          deathCountRef.current+=1; setDeathCount(deathCountRef.current);
+          SFX.wrong(); onPlayerDied();
+          if(deathCountRef.current>=DEATH_LIMIT){ shouldEndGame=true; }
+          return{...s,y:ny,state:"wrong"};
+        }
+        else if(!isMatch&&inLane){
+          deathCountRef.current+=1; setDeathCount(deathCountRef.current);
+          SFX.wrong(); onPlayerDied();
+          if(deathCountRef.current>=DEATH_LIMIT){ shouldEndGame=true; }
+          return{...s,y:ny,state:"wrong"};
+        }
         else{SFX.pass();return{...s,y:ny,state:"passed"};}
       }
       return{...s,y:ny};
     }).filter(s=>s.y<1.3);
     signsRef.current=updated;setSigns(updated);
-    if(newDead&&!deadRef.current){deadRef.current=true;SFX.over(); onPlayerDied(); const survived=scoreRef.current; if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);} setTimeout(()=>setPhase("result"),1800);}
+    if(shouldEndGame&&!deadRef.current){
+      deadRef.current=true; SFX.over();
+      const survived=scoreRef.current;
+      if(survived>highScore){setHighScore(survived);try{localStorage.setItem(HS_KEY,String(survived));}catch{} setNewHS(true);} else {setNewHS(false);}
+      setTimeout(()=>setPhase("result"),1800);
+    }
     rafRef.current=requestAnimationFrame(tick);
   },[spawnSign,highScore]);
 
   useEffect(()=>{if(phase==="playing"&&!paused){lastTRef.current=null;rafRef.current=requestAnimationFrame(tick);}return()=>{cancelAnimationFrame(rafRef.current);lastTRef.current=null;};},[phase,paused,tick]);
-  useEffect(()=>{if(phase==="playing"){scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];travelRef.current=TRAVEL_TIME;spawnTimerRef.current=1.2;spawnIntRef.current=SPAWN_INTERVAL;signsRef.current=[];isDragRef.current=false;pausedRef.current=false;setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);}if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
+  useEffect(()=>{if(phase==="playing"){
+    scoreRef.current=0;deadRef.current=false;carLaneRef.current=1;carSpeedRef.current=SPEEDS[Math.floor(Math.random()*SPEEDS.length)];
+    deathCountRef.current=0; gameTimeRef.current=0; setDeathCount(0);
+    travelRef.current=getTravelTime(true); spawnIntRef.current=getSpawnInterval(true);
+    spawnTimerRef.current=1.2; signsRef.current=[];isDragRef.current=false;pausedRef.current=false;
+    setStreak(0);setNewHS(false);setCarLane(1);setCarLean(0);setCarPunch(false);setPaused(false);setCarSpeed(carSpeedRef.current);setSigns([]);setSpeedBlur(false);setSpeedFlash(false);
+  }if(phase!=="playing"){cancelAnimationFrame(rafRef.current);setSigns([]);signsRef.current=[];setSpeedBlur(false);}},[phase]);
 
   const signScale=y=>Math.max(0.25,Math.min(1.1,0.25+Math.max(0,y)*0.95));
   const carXPct=carLane*LANE_W+LANE_W/2;
@@ -183,7 +230,7 @@ export default function UltraLane(){
         <div style={{position:"relative",zIndex:10,display:"flex",alignItems:"center",justifyContent:"center",width:"100%",height:"100vh",height:"100dvh",paddingBottom:"18vh"}}>
           <div style={{background:"rgba(26,17,60,0.92)",border:"1.5px solid rgba(255,111,97,0.4)",borderRadius:22,padding:"24px 22px 22px",maxWidth:340,width:"92%",display:"flex",flexDirection:"column",alignItems:"center",gap:16}}>
             <h1 style={{backgroundImage:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",fontSize:46,fontWeight:900,textAlign:"center",margin:0,lineHeight:0.96,letterSpacing:10,whiteSpace:"pre-line",fontFamily:"'Arial Black',Arial,sans-serif"}}>{"ULTRA\nLANE"}</h1>
-            {phase==="result"&&(<><p style={{color:"#b6a6e6",fontSize:12,margin:0,letterSpacing:1.5}}>{newHS?"🏆 New High Score!":"Game over."}</p><div style={{width:"100%",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"12px 8px",display:"flex",justifyContent:"space-around"}}>{[["STREAK",`${streak}`],["BEST",`${highScore}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:i===1?"#ffd23f":"#fff",fontSize:21,fontWeight:900,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}</div></>)}
+            {phase==="result"&&(<><p style={{color:"#b6a6e6",fontSize:12,margin:0,letterSpacing:1.5}}>{newHS?"🏆 New High Score!":"Game over. "+deathCount+" / "+DEATH_LIMIT+" deaths"}</p><div style={{width:"100%",background:"rgba(255,255,255,0.05)",borderRadius:12,padding:"12px 8px",display:"flex",justifyContent:"space-around"}}>{[["STREAK",`${streak}`],["BEST",`${highScore}`],["DEATHS",`${deathCount}/${DEATH_LIMIT}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:i===1?"#ffd23f":"#fff",fontSize:21,fontWeight:900,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}</div></>)}
             {phase==="intro"&&highScore>0&&(<div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>BEST STREAK</span><span style={{color:"#ffd23f",fontSize:21,fontWeight:900,lineHeight:1.25,fontFamily:"'Arial Black',Arial,sans-serif"}}>{highScore}</span></div>)}
             <button style={{background:"linear-gradient(135deg,#ffd23f,#ff8f5c,#ff5da2)",color:"#1b1150",border:"none",borderRadius:14,padding:"15px 0",fontSize:16,fontWeight:900,letterSpacing:3,cursor:"pointer",width:"100%",fontFamily:"'Arial Black',Arial,sans-serif"}} onClick={()=>setPhase("playing")}>GO</button>
           </div>
@@ -196,7 +243,7 @@ export default function UltraLane(){
   return(
     <div style={{width:"100vw",height:"100vh",height:"100dvh",background:PAGE_BG,backgroundColor:"#1b1150",display:"flex",flexDirection:"column",alignItems:"center",fontFamily:"'Trebuchet MS',Arial,sans-serif",overflow:"hidden",userSelect:"none",touchAction:"none",position:"relative",margin:0,padding:0}}>
       <div style={{width:"100%",maxWidth:440,display:"flex",justifyContent:"space-between",alignItems:"center",paddingTop:"calc(env(safe-area-inset-top, 0px) + 12px)",paddingBottom:"10px",paddingLeft:"20px",paddingRight:"20px",background:"linear-gradient(180deg, rgba(27,17,80,0.97), rgba(58,31,107,0.97))",borderBottom:"1px solid rgba(255,111,97,0.28)",zIndex:50,flexShrink:0,boxSizing:"border-box"}}>
-        {[["STREAK",`${streak}`],["BEST",`${highScore}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:i===1?"flex-end":"flex-start"}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:"#ffd23f",fontSize:21,fontWeight:900,lineHeight:1.25,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}
+        {[["STREAK",`${streak}`],["BEST",`${highScore}`],[`DEATH ${deathCount}/${DEATH_LIMIT}`,`${LEARN_TIME - Math.floor(gameTimeRef.current) > 0? 'LEARN '+ (LEARN_TIME - Math.floor(gameTimeRef.current))+'s' : 'MEDIUM'}`]].map(([l,v],i)=>(<div key={i} style={{display:"flex",flexDirection:"column",alignItems:i===1?"flex-end":i===2?"center":"flex-start"}}><span style={{color:"#9682cf",fontSize:9,letterSpacing:2,fontWeight:700}}>{l}</span><span style={{color:"#ffd23f",fontSize:14,fontWeight:900,lineHeight:1.25,fontFamily:"'Arial Black',Arial,sans-serif"}}>{v}</span></div>))}
       </div>
       <div ref={roadRef} style={{flex:1,width:"100%",maxWidth:440,position:"relative",overflow:"hidden",cursor:"pointer"}}
         onMouseDown={e=>startDrag(e.clientX,e.clientY)} onMouseMove={e=>moveDrag(e.clientX,e.clientY)} onMouseUp={endDrag} onMouseLeave={endDrag}
