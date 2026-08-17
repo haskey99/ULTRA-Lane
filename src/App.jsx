@@ -9,9 +9,9 @@ const SPEEDS = [20,30,40,50,60,70,80,90,100,110,120,130];
 const TRAVEL_TIME = 1.5;
 const SPAWN_INTERVAL = 1.0;
 
-// invisible flat learn
-const LEARN_TIME = 18;
-const MEDIUM_TRAVEL_TIME = TRAVEL_TIME * 1.07; // 7% easier than +15%
+// invisible flat learn - 13.5 sec
+const LEARN_TIME = 13.5;
+const MEDIUM_TRAVEL_TIME = TRAVEL_TIME * 1.07;
 const MEDIUM_SPAWN_INTERVAL = SPAWN_INTERVAL * 1.07;
 const EASY_TRAVEL_TIME = MEDIUM_TRAVEL_TIME * 1.30;
 const EASY_SPAWN_INTERVAL = MEDIUM_SPAWN_INTERVAL * 1.40;
@@ -117,19 +117,37 @@ export default function UltraLane(){
     spawnTimerRef.current-=dt;
     if(spawnTimerRef.current<=0){spawnSign();spawnTimerRef.current=spawnIntRef.current;}
     let newDead=false;
+    const HIT_START = HIT_ZONE_Y - 0.06;
+    const HIT_END = HIT_ZONE_Y + 0.10;
     const updated=signsRef.current.map(s=>{
       if(s.state!==null)return{...s,y:s.y+spd*dt};
       const ny=s.y+spd*dt;
       const inLane=carLaneRef.current===s.lane;
       const isMatch=s.speed===carSpeedRef.current;
-      if(ny>=HIT_ZONE_Y&&s.y<HIT_ZONE_Y){
-        if(isMatch&&inLane){SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
-          const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
-          travelRef.current=getTravelTime(gameTimeRef.current<LEARN_TIME);spawnIntRef.current=getSpawnInterval(gameTimeRef.current<LEARN_TIME);setSpeedBlur(false);
-          return{...s,y:ny,state:"correct"};}
-        else if(isMatch&&!inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
-        else if(!isMatch&&inLane){if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}return{...s,y:ny,state:"wrong"};}
-        else{SFX.pass();return{...s,y:ny,state:"passed"};}
+      const wasBefore=s.y < HIT_END;
+      const isOverlapping=ny >= HIT_START && ny <= HIT_END;
+      const hasPassed=ny > HIT_END;
+      // 1. Correct sign collected
+      if(inLane && isMatch && ny>=HIT_ZONE_Y){
+        SFX.correct();scoreRef.current+=1;setStreak(st=>st+1);
+        const ns=pickCarSpeed(carSpeedRef.current);carSpeedRef.current=ns;setCarSpeed(ns);setSpeedFlash(true);SFX.speedChange();setTimeout(()=>setSpeedFlash(false),600);
+        travelRef.current=getTravelTime(gameTimeRef.current<LEARN_TIME);spawnIntRef.current=getSpawnInterval(gameTimeRef.current<LEARN_TIME);setSpeedBlur(false);
+        return{...s,y:ny,state:"correct"};
+      }
+      // 2. Wrong sign - car goes THROUGH it (same lane, wrong speed)
+      if(inLane &&!isMatch && isOverlapping){
+        if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}
+        return{...s,y:ny,state:"wrong"};
+      }
+      // 3. Correct sign missed - it goes PAST you
+      if(!inLane && isMatch && hasPassed && wasBefore){
+        if(!newDead&&!deadRef.current){newDead=true;SFX.wrong();}
+        return{...s,y:ny,state:"wrong"};
+      }
+      // 4. Wrong sign in other lane goes past - ignore
+      if(!inLane &&!isMatch && hasPassed){
+        SFX.pass();
+        return{...s,y:ny,state:"passed"};
       }
       return{...s,y:ny};
     }).filter(s=>s.y<1.3);
