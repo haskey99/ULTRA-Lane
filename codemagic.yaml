@@ -48,9 +48,13 @@ workflows:
       - name: Set up code signing
         script: |
           keychain initialize
-          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create
+          openssl genrsa -out /tmp/private.key 2048
+          openssl req -new -key /tmp/private.key -out /tmp/csr.pem -subj "/CN=iOS Distribution/O=ULTRA Lane/C=US"
+          export CERTIFICATE_PRIVATE_KEY=$(cat /tmp/private.key)
+          app-store-connect certificates create --type IOS_DISTRIBUTION --csr @file:/tmp/csr.pem --save --verbose || true
+          app-store-connect fetch-signing-files "$APP_ID" --type IOS_APP_STORE --create --verbose
           keychain add-certificates
-          xcode-project use-profiles
+          xcode-project use-profiles --export-options /tmp/ExportOptions.plist
       - name: Build IPA for App Store
         script: |
           mkdir -p build/ios/ipa
