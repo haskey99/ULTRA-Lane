@@ -1,7 +1,7 @@
 {
   "name": "ultra-lane",
   "private": true,
-  "version": "1.0.14",
+  "version": "1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
